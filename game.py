@@ -202,7 +202,7 @@ class WorldPoint:
             scale = camera.focalLength/(camera.focalLength + z)
         return ScreenPoint(
             camera.vanishingPointX + x * abs(scale), 
-            camera.vanishingPointY + y * abs(scale), scale)
+            camera.vanishingPointY + y * abs(scale), -scale)
     
 class Camera(WorldAngle, WorldPoint):
     def draw(self, canvas, world_objects):
@@ -240,22 +240,22 @@ class WorldPoly:
         return self.points[key]
     
     def transform(self, camera):
-        line_thinkness = 1
-        points = []
-        maxY = -1000000000
-        minY = 10000000000
-        for point in self.points:
-            points.append( point.transform(camera) )
-            if points[len(points)-1][1] > maxY:
-                maxY = points[len(points)-1][1]
-            if points[len(points)-1][1] < maxY:
-                minY = points[len(points)-1][1]
-        if maxY > 0:
-            if minY < 0:
-                trimZero(points, 1, 3)
-            return ScreenPoly(points, self.color_r, self.color_g, self.color_b)
-        return None
-    
+            line_thinkness = 1
+            points = []
+            maxScale = -1000000000
+            minScale = 10000000000
+            for point in self.points:
+                points.append( point.transform(camera) )
+                if points[len(points)-1][2] > maxScale:
+                    maxScale = points[len(points)-1][2]
+                if points[len(points)-1][2] < maxScale:
+                    minScale = points[len(points)-1][2]
+            if maxScale > 0:
+                if minScale < 0:
+                    trimZero(points, 2, 3)
+                return ScreenPoly(points, self.color_r, self.color_g, self.color_b)
+            return None
+        
     #prototope temp
     def min_x(self):
         min_x = 10000000000
