@@ -10,6 +10,10 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
     
     def trimZero(points, axis, axis_n):
         
+ 
+        def backface(x1,y1,x2,y2,x3,y3):
+            return ((x3 - x1) * (y2 - y3)) > ((y3 - y1) * (x2 - x3))
+                    
         #point on line from point_a to point_b where axis = 0
         def intersection(point_a, point_b, axis, axis_n):
             new_point = []
@@ -21,9 +25,11 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
                 new_point[axis] = 0
             if axis_n == 2:
                 new_point[axis] = 0
-                new_point[axis-1] = (point_a[axis]* abs(point_a[axis-1]-point_b[axis-1]))/ (point_a[axis]-point_b[axis]) + point_a[axis-1]
+                new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
             return new_point
         
+        backface_start = backface(points[0][0],points[0][1],points[1][0],points[1][1],points[2][0],points[2][1])
+
         min = 1000000000000
         max = -1000000000000
         for point in points:
@@ -34,10 +40,9 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
                 
         if min < 0 and max > 0:
             i = 0
-            while points[i][axis] < 0:
+            while points[i][axis] <= 0:
                 i = (i+1)%len(points)
-
-            while points[i][axis] > 0:
+            while points[i][axis] >= 0:
                 i = (i+1)%len(points)
 
             point_a = intersection(points[i],points[i-1],axis,axis_n)
@@ -52,14 +57,20 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
                     points.pop(cut_start)
                 for  i in range(0,cut_end):
                     points.pop(0)
-                points.insert(cut_start,point_b)
-                points.insert(cut_start,point_a)
             else:
                 for i in range(cut_start,cut_end):
                     points.pop(cut_start)
+                
+            backface_end = backface(points[0][0],points[0][1],point_a[0],point_a[1],point_b[0],point_b[1])
+        
+            if backface_start == backface_end:
+                points.insert(cut_start,point_b)
                 points.insert(cut_start,point_a)
-                points.insert(cut_start,point_b) 
+            else:
+                points.insert(cut_start,point_a)
+                points.insert(cut_start,point_b)
     
+    #can optimize by not running for edges of screen
     def trimAxis(points, min, max, axis, axis_n):
         if min != 0:
             for point in points:
