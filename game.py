@@ -149,6 +149,9 @@ class DrawEngine:
             
         def turn(self, y_change):
             self.y_rotate += y_change
+            
+        def set_angle(self, y_angle):
+            self.y_rotate = y_angle
     
     
     class WorldPoint:
@@ -245,24 +248,30 @@ class DrawEngine:
         
     class WorldPlayer(WorldPoint):
         def __init__(self,x,y,z):
-            DrawEngine.WorldPoint.__init__(self, x,y,z)
-            self.y_vel = 0
+            DrawEngine.WorldPoint.__init__(self, x,-75,z)
+            self.y_vel = 1
             
         def update(self):
-            
-            collide = False
-            
-            for item in world_objects:
-                if item != player_a and item != player_b:
-                    if self.x > item.min_x() and self.x < item.max_x() and self.z > item.min_z() and self.z < item.max_z():
-                        collide = True
-                        break
-            
-            
-            self.y += self.y_vel
-            
-            if self.y_vel > 0 and not collide:
-                self.y = -75
+            if self.y_vel < 0:
+                 self.y += self.y_vel
+            elif self.y <= -75 and self.y+self.y_vel > -75:
+             
+                collide = False
+
+                for item in world_objects:
+                    if item != player_a and item != player_b:
+                        if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.z >= item.min_z()-50  and self.z <= item.max_z()+50 :
+                            collide = True
+                            break
+
+                if not collide:
+                    self.y += self.y_vel
+                else:
+                    self.y = -75
+                    self.y_vel = 0
+            else:
+                self.y += self.y_vel
+
             
             # if collide:
             #     self.y = 100
@@ -270,33 +279,33 @@ class DrawEngine:
             #     self.y = 500
             
                 
-            self.y_vel += 1
+            self.y_vel += 4
             
         def jump(self):
-            
-            collide = False
-            
-            for item in world_objects:
-                if item != player_a and item != player_b:
-                    if self.x > item.min_x() and self.x < item.max_x() and self.z > item.min_z() and self.z < item.max_z():
-                        collide = True
-                        break
-            if collide:   
-                if self.y >= -75:
-                    self.y_vel -= 5
-                self.y_vel -= 0.1
+            if self.y == -75:
+                collide = False
+
+                for item in world_objects:
+                    if item != player_a and item != player_b:
+                        if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.z >= item.min_z()-50  and self.z <= item.max_z()+50 :
+                            collide = True
+                            break
+                #cases: in air above, on platform, below platform
+
+                if collide: 
+                    self.y_vel -= 30
             
         def forward(self):
-            self.z += 10
+            self.z += 20
             
         def left(self):
-            self.x -= 10
+            self.x -= 20
             
         def right(self):
-            self.x += 10
+            self.x += 20
             
         def back(self):
-            self.z -= 10
+            self.z -= 20
             
          
         
@@ -335,7 +344,7 @@ class DrawEngine:
             
         def draw(self, canvas, camera):
             line_width = 5
-            radius = 15
+            radius = 30
             if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
                 canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), radius * self.scale, line_width, 'White','Grey')
     
@@ -418,10 +427,25 @@ def render_field(canvas):
     canvas.draw_text('Avery Whitaker | Split-Screen Multiplayer Prototype V0.2', (30, 50), 48, 'Red')
     
     
+    
+    
     player_a.update()
     player_b.update()
-    left_camera.set_pos(-player_a.x, 200-player_a.y, 100-player_a.z)
-    right_camera.set_pos(-player_b.x, 200-player_b.y, 100-player_b.z)
+     
+    p1x = player_a[0]
+    p1y = player_a[2]
+    p2x = player_b[0]
+    p2y = player_b[2]
+
+    angle_a =math.atan2(p2y - p1y, p2x - p1x)
+    angle_b = math.atan2(p1y - p2y, p1x - p2x)
+    
+    left_camera.set_angle(math.pi/2-angle_a)
+    right_camera.set_angle(math.pi/2-angle_b)
+    
+    #left_camera.set_pos(-math.sin(angle_a)*100-player_a.x, 200-player_a.y, -math.cos(angle_a)*100-player_a.z)
+    #left_camera.set_pos(-player_a.x-math.cos(angle_a)*600, 200-player_a.y, -player_a.z-math.sin(angle_a)*600)
+    #right_camera.set_pos(-player_b.x, 200-player_b.y, 100-player_b.z)
     
     
     random.shuffle(world_objects)
