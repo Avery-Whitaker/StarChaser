@@ -228,7 +228,7 @@ class Camera(WorldAngle, WorldPoint):
         self.screen_y = screen_y
         self.screen_width = screen_width
         self.screen_height = screen_height
-        self.focalLength = 250.0
+        self.focalLength = 200.0
         self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
     
 class WorldPoly:
@@ -468,29 +468,6 @@ def update_world():
     player_a.update()
     player_b.update()
     
-    
-    #lenAB = math.sqrt( (p2x-p1x)**2 + (p2y-p1y)**2 )
-    
-    
-    #left_camera.set_pos(math.cos(angle_b)*300+player_a.x,  math.sin(angle_b)*300+player_a.y, 300+player_a.z)
-    #right_camera.set_pos(math.cos(angle_a)*300+player_b.x,  math.sin(angle_a)*300+player_b.y,300+player_b.z)
-    
-    
-    # right_camera.set_pos(-p1x - (p1x-p2x) / lenAB * 300,200-player_a.y, -p1y - (p2y-p1y) / lenAB * 300)
-    #left_camera.set_pos(-p2x + (p1x-p2x) / lenAB * 300,200-player_b.y, -p2y + (p1y-p2y) / lenAB * 300)
-    
-    #left_camera.set_pos(-math.sin(angle_a)*100-player_a.x, 200-player_a.y, -math.cos(angle_a)*100-player_a.z)
-    #right_camera.set_pos(-player_a.x-math.cos(angle_a)*600, 200-player_a.y, -player_a.z-math.sin(angle_a)*600)
-    #right_camera.set_pos(-player_b.x, 200-player_b.y, 100-player_b.z)
-    #print angle_a
-    #left_camera.set_pos(-math.cos(-angle_a)*800-player_a.x, 200-player_a.y, -math.sin(-angle_a)*800-player_a.z)
-    #right_camera.set_pos(-math.cos(-angle_b)*800-player_b.x, 200-player_b.y, -math.sin(-angle_b)*800-player_b.z)
-    
-    #left_camera.set_pos(math.cos(temp_angle)*500+player_a.x, math.sin(temp_angle)*500+player_a.y, 300+player_a.z)
-    
-    #player_a.z = 75
-    #player_b.z = 75
-    
     dx = player_b.x-player_a.x
     dy = player_b.y-player_a.y
     l = 600
@@ -498,18 +475,23 @@ def update_world():
     angle_a = WorldAngle.angleBetweenWorldPoints(player_a, player_b)
     angle_b = WorldAngle.angleBetweenWorldPoints(player_b, player_a)
     
-    left_camera.set_angle_xy(math.pi/2-WorldAngle.angleBetweenWorldPoints(player_a, player_b))
-    right_camera.set_angle_xy(math.pi/2-WorldAngle.angleBetweenWorldPoints(player_b, player_a))
+    if L < 100:
+        keys_down[simplegui.KEY_MAP["up"]] = False
+        keys_down[simplegui.KEY_MAP["w"]] = False
     
-    left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 300+player_a.z)
-    right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 300+player_b.z)
-    
-    #left_camera.set_pos(player_a.x, player_a.y, 300+player_a.z)
-    #right_camera.set_pos(player_b.x, player_b.y, 300+player_b.z)
-    
-    
+    # if L > 50:
+     #   if L > 200:
     player_a.set_angle_xy(math.pi/2-angle_a)
     player_b.set_angle_xy(math.pi/2-angle_b)
+
+    left_camera.set_angle_xy(player_a.angle_xy)
+    right_camera.set_angle_xy(player_b.angle_xy)
+
+
+    left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 500+player_a.z)
+    right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 500+player_b.z)
+    
+    
 #    
 #    random.shuffle(world_objects)
 #
