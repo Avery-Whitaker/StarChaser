@@ -44,7 +44,7 @@ class DrawEngine:
         def turn(self, x_change, y_change, z_change):
             xc, yc, zc = draw_engine.ThreeDPoint(x_change,y_change,z_change).get_rotated(self.x_rotate, self.y_rotate, self.z_rotate, 0,0,0)
             
-            print xc, yc, zc
+            #print xc, yc, zc
            
             self.x_rotate += xc
             self.y_rotate += yc
@@ -228,16 +228,14 @@ class DrawEngine:
                        (self.x2, self.y2, self.z2) , 
                        (self.x3, self.y3, self.z3) , 
                        (self.x4, self.y4, self.z4) ]
-            
+            draw = True
             #Trim polygon
             if self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0:
                 if self.z1 < 0 or self.z2 < 0 or self.z3 < 0 or self.z4 < 0:
-                    
+                    draw = False
 
                     def backface(x1,y1,z1,x2,y2,z2,x3,y3,z3):
-                        if self.priority == None:
-                            self.pre_render()
-                            return (x3 - x1) * (y2 - y3) > (y3 - y1) * (x2 - x3)
+                        return ((x3 - x1) * (y2 - y3)) > ((y3 - y1) * (x2 - x3))
                     
                     backface_start = backface(self.x1,self.y1,self.z1,self.x2,self.y2,self.z2,self.x3,self.y3,self.z3)
         
@@ -258,24 +256,36 @@ class DrawEngine:
                                ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
                     cut_end = i
                     if cut_start > cut_end:
-                        print "In  + " + str(points)
+                        #print "In  + " + str(points)
                         for  i in range(cut_start,len(points)):
                             points.pop(cut_start)
                         for  i in range(0,cut_end):
                             points.pop(0)
                             
-                        print "Cut + " + str(points)
-                        points.insert(cut_start,point_a) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11 
-                        points.insert(cut_start,point_b) #THIS IS THE PROBLEM CASE
-                        print "Out + " + str(points)
+                        #print "Cut + " + str(points)
+                        #points.insert(cut_start,point_a) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11 
+                        #points.insert(cut_start,point_b) #THIS IS THE PROBLEM CASE
+                        
+                        backface_end = backface(self.x1,self.y1,self.z1,point_a[0],point_a[1],point_a[2],point_b[0],point_b[1],point_b[2])
+        
+                        if backface_start != backface_end:
+                            points.insert(cut_start,point_a) #This is where glitchy things come from
+                            points.insert(cut_start,point_b)
+                            draw = True
+                        else:
+                            points.insert(cut_start,point_b)
+                            points.insert(cut_start,point_a)
+                            draw = True
+                        
+                        #print "Out + " + str(points)
                     else:
                         for  i in range(cut_start,cut_end):
                             points.pop(cut_start)
                         points.insert(cut_start,point_b)
                         points.insert(cut_start,point_a)
+                        draw = True
                             
-                    backface_end = backface(self.x1,self.y1,self.z1,point_a[0],point_a[1],point_a[2],point_b[0],point_b[1],point_b[2])
-        
+                    print ""
                     #if backface_start == backface_end:
                     #    points.insert(cut_start,point_b) #good
                     #    points.insert(cut_start,point_a)
@@ -292,10 +302,10 @@ class DrawEngine:
                 points = new
 
                 #if self.priority > 0:
-                #brightness = 200*self.priority/draw_engine.focalLength
-                brightness = 5
+                brightness = 200*self.priority/draw_engine.focalLength
+                #brightness = 5
                 #print brightness
-                if brightness > 0.2:
+                if draw and brightness > 0.2:
 
                     if POLYS:
                         canvas.draw_polygon( points, line_thinkness, 'rgba(0,0,0,0)',"rgb("+str(max(min(int(self.color_r*brightness),self.color_r),0))+","+str(max(min(int(self.color_g*brightness),self.color_g),0))+","+str(max(min(int(self.color_b*brightness),self.color_b),0))+")")
@@ -352,7 +362,7 @@ def make_maze(w = 16, h = 8):
     return rtr
 ##End maze gen magic
  
-n = 2 #maze size nxn
+n = 4 #maze size nxn
 
 maze = make_maze(n,n)
 print maze
