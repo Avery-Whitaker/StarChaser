@@ -1,13 +1,57 @@
+''' 
+Looking for a new name for this project. If you have any ideas plese put in evaluation!
+
+Pitch Sheet: http://www.averyw.me/RunNGunPoster.pdf
+
+Description:
+2 Player game. (split-screen mulitplayer) Goal is to survive 
+longer then other player. Death currently can only occur by 
+falling off platforms. Platforms can be destroyed (currently 
+just randomly disapear).
+
+Controls: 
+Left palyer: WASD to move, space to jump
+         Right Player: Arrow Keys to move, shift to jump
+Currently Camera fixes static angle. have it working that
+camera can face other player, but dont have offset working.
+Ultimatly plan is camera alway facec other player except
+when players are close.
+
+Author Contact:
+
+please direct any questions to
+averywhitaker@rice.edu
+
+Liscensed under BSD:
+
+Copyright (c) 2015 Avery Whitaker.
+All rights reserved.
+
+Redistribution and use in source and binary forms are permitted
+provided that the above copyright notice and this paragraph are
+duplicated in all such forms and that any documentation,
+advertising materials, and other materials related to such
+distribution and use acknowledge that the software was developed
+by Avery Whitaker. The name of Avery Whitaker may not be used to 
+endorse or promote products derived from this software without
+specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+'''
+
 import simplegui
 import math
 import random
 
 #in: list of points
-
 ##########################################################################################
 def trimZero(points, axis, axis_n):
+    
         #stolen from internet https://paolocrosetto.wordpress.com/python-code/
         #works like magic
+        #I claim no rights to this function
         def check_convexity(p):
             #this checks the sign of a number
             def sign(x):
@@ -279,7 +323,7 @@ class DrawEngine:
             #     self.y = 500
             
                 
-            self.y_vel += 4
+            self.y_vel += 3
             
         def jump(self):
             if self.y == -75:
@@ -293,19 +337,23 @@ class DrawEngine:
                 #cases: in air above, on platform, below platform
 
                 if collide: 
-                    self.y_vel -= 30
+                    self.y_vel -= 40
             
-        def forward(self):
-            self.z += 20
+        def forward(self, angle):
+            self.z += 20 * math.sin(angle)
+            self.x += 20 * math.cos(angle)
             
-        def left(self):
-            self.x -= 20
+        def left(self, angle):
+            self.x -= 20 * math.sin(angle)
+            self.z += 20 * math.cos(angle)
             
-        def right(self):
-            self.x += 20
-            
-        def back(self):
-            self.z -= 20
+        def right(self, angle):
+            self.x += 20 * math.sin(angle)
+            self.z -= 20 * math.cos(angle)
+           
+        def back(self, angle):
+            self.z -= 20 * math.sin(angle)
+            self.x -= 20 * math.cos(angle)
             
          
         
@@ -346,7 +394,7 @@ class DrawEngine:
             line_width = 5
             radius = 30
             if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
-                canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), radius * self.scale, line_width, 'White','Grey')
+                canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), radius * self.scale, line_width, 'Red','Red')
     
             
     class ScreenPoly:
@@ -393,12 +441,12 @@ class DrawEngine:
                 canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
 
 world_objects = []
-n = 8
+n = 6
 l = 300 
 
 for y in range(0,n):
     for x in range(0,n):
-        if random.random() > 0.4:
+        if random.random() > 0.2:
             world_objects.append(DrawEngine.WorldPoly([DrawEngine.WorldPoint(l+x*l, 0, l+y*l),
                                                       DrawEngine.WorldPoint(0+x*l, 0, l+y*l),
                                                       DrawEngine.WorldPoint(0+x*l, 0, 0+y*l), 
@@ -420,11 +468,17 @@ right_camera = DrawEngine.Camera(-200,200,-200,  0, world_objects ,WIDTH/2+50 , 
                 
 def render_field(canvas):
     canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Cyan')
-    right_camera.draw(canvas)
-    left_camera.draw(canvas)
+    
+    canvas.draw_text('RIP', (75, 200), 48, 'Black')
+    canvas.draw_text('RIP', (WIDTH/2+100, 200), 48, 'Black')
+    
+    if player_b[1] < 0:
+        right_camera.draw(canvas)
+    if player_a[1] < 0:
+        left_camera.draw(canvas)
     #canvas.draw_line((WIDTH/2, 100), (WIDTH/2, HEIGHT), 4, 'White')
     #canvas.draw_line((0, 100), (WIDTH, 100), 4, 'White')
-    canvas.draw_text('Avery Whitaker | Split-Screen Multiplayer Prototype V0.2', (30, 50), 48, 'Red')
+    canvas.draw_text('Avery Whitaker | (Split-Screen Multiplayer Prototype) V0.4', (30, 50), 48, 'Red')
     
     
     
@@ -440,12 +494,22 @@ def render_field(canvas):
     angle_a =math.atan2(p2y - p1y, p2x - p1x)
     angle_b = math.atan2(p1y - p2y, p1x - p2x)
     
-    left_camera.set_angle(math.pi/2-angle_a)
-    right_camera.set_angle(math.pi/2-angle_b)
+    #left_camera.set_angle(math.pi/2-angle_a)
+    #right_camera.set_angle(math.pi/2-angle_b)
+    lenAB = math.sqrt( (p2x-p1x)**2 + (p2y-p1y)**2 )
+    #right_camera.set_pos(-p1x - (p1x-p2x) / lenAB * 300,200-player_a.y, -p1y - (p2y-p1y) / lenAB * 300)
+    #left_camera.set_pos(-p2x + (p1x-p2x) / lenAB * 300,200-player_b.y, -p2y + (p1y-p2y) / lenAB * 300)
     
     #left_camera.set_pos(-math.sin(angle_a)*100-player_a.x, 200-player_a.y, -math.cos(angle_a)*100-player_a.z)
-    #left_camera.set_pos(-player_a.x-math.cos(angle_a)*600, 200-player_a.y, -player_a.z-math.sin(angle_a)*600)
+    #right_camera.set_pos(-player_a.x-math.cos(angle_a)*600, 200-player_a.y, -player_a.z-math.sin(angle_a)*600)
     #right_camera.set_pos(-player_b.x, 200-player_b.y, 100-player_b.z)
+    #print angle_a
+    #left_camera.set_pos(-math.cos(-angle_a)*800-player_a.x, 200-player_a.y, -math.sin(-angle_a)*800-player_a.z)
+    #right_camera.set_pos(-math.cos(-angle_b)*800-player_b.x, 200-player_b.y, -math.sin(-angle_b)*800-player_b.z)
+    
+    left_camera.set_pos(-player_a.x, 300-player_a.y, 300-player_a.z)
+    right_camera.set_pos(-player_b.x, 300-player_b.y, 300-player_b.z)
+    
     
     
     random.shuffle(world_objects)
@@ -540,26 +604,34 @@ def key_action():
 #    if keys_down[simplegui.KEY_MAP["e"]]:
 #        left_camera.move(0,10,0)
 
+    p1x = player_a[0]
+    p1y = player_a[2]
+    p2x = player_b[0]
+    p2y = player_b[2]
+    
     if keys_down[simplegui.KEY_MAP["up"]]:
-        player_b.forward()
+        player_b.forward(math.pi/2)
+        #player_b.forward(math.atan2(p1y - p2y, p1x - p2x))
     if keys_down[simplegui.KEY_MAP["down"]]:
-        player_b.back()
+        player_b.back(math.pi/2)
     if keys_down[simplegui.KEY_MAP["left"]]:
-        player_b.left()
+        player_b.left(math.pi/2)
     if keys_down[simplegui.KEY_MAP["right"]]:
-        player_b.right()
+        player_b.right(math.pi/2)
         
     if keys_down[16]:
         player_b.jump()
         
+    
     if keys_down[simplegui.KEY_MAP["s"]]:
-        player_a.back()
+        #player_a.back(math.atan2(p2y - p1y, p2x - p1x))
+        player_a.back(math.pi/2)
     if keys_down[simplegui.KEY_MAP["a"]]:
-        player_a.left()
+        player_a.left(math.pi/2)
     if keys_down[simplegui.KEY_MAP["d"]]:
-        player_a.right()
+        player_a.right(math.pi/2)
     if keys_down[simplegui.KEY_MAP["w"]]:
-        player_a.forward()
+        player_a.forward(math.pi/2)
         
     if keys_down[simplegui.KEY_MAP["space"]]:
         player_a.jump()
