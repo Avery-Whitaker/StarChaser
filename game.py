@@ -4,11 +4,8 @@ import random
 
 #in: list of points
 
-#mutates points_list
-#trims polygon to be in rectangle defined by xMin, xMax yMin, yMax
-def polyTrim(points_list, xMin, xMax, yMin, yMax):
-    
-    def trimZero(points, axis, axis_n):
+##########################################################################################
+def trimZero(points, axis, axis_n):
         
  
         def backface(x1,y1,x2,y2,x3,y3):
@@ -20,13 +17,29 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
             for i in range(0,axis_n):
                 new_point.append(0)
             if axis_n == 3:
-                new_point[axis-2] = (max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-2],point_a[axis-2])
+                #print axis
+                q= point_a[axis-2]
+                w= point_b[axis-2]
+                print type(q)
+                print type(w)
+                print max #MAX IS A VARIABLE
+                print max([float(w),float(q)])
+                print "!"
+                a = max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2])
+                print a
+                b = max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis]))
+                print b
+                c = min(point_b[axis-2],point_a[axis-2])
+                print c
+                
+                new_point[axis-2] = a*b + c
                 new_point[axis-1] = (max(point_a[axis-1],point_b[axis-1])-min(point_b[axis-1],point_a[axis-1]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-1],point_a[axis-1])
                 new_point[axis] = 0
+                return [new_point[0],new_point[1],new_point[2]]
             if axis_n == 2:
                 new_point[axis] = 0
                 new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
-            return new_point
+                return [new_point[0],new_point[1]]
         
         backface_start = backface(points[0][0],points[0][1],points[1][0],points[1][1],points[2][0],points[2][1])
 
@@ -46,6 +59,7 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
                 i = (i+1)%len(points)
 
             point_a = intersection(points[i],points[i-1],axis,axis_n)
+
             cut_start = i
             while points[i][axis] < 0:
                 i = (i+1)%len(points)
@@ -69,6 +83,14 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
             else:
                 points.insert(cut_start,point_a)
                 points.insert(cut_start,point_b)
+                
+##########################################################################################
+
+#mutates points_list
+#trims polygon to be in rectangle defined by xMin, xMax yMin, yMax
+def polyTrim(points_list, xMin, xMax, yMin, yMax):
+    
+    
     
     #can optimize by not running for edges of screen
     def trimAxis(points, min, max, axis, axis_n):
@@ -237,56 +259,59 @@ class DrawEngine:
                     minZ = points[len(points)-1][2]
 
             if maxZ > 0:
-                if minZ < 0:
-                    x1 = points[0][0]
-                    y1 = points[0][1]
-                    z1 = points[0][2] #NO
-                    x2 = points[1][0]
-                    y2 = points[1][1]
-                    z2 = points[1][2]
-                    x3 = points[2][0]
-                    y3 = points[2][1]
-                    z3 = points[2][2] #CRASHES LESS THEN THREE
-                   
-                    #this is really wrong 
-                    def backface(x1,y1,z1,x2,y2,z2,x3,y3,z3):
-                        return ((x3 - x1) * (y2 - y3)) > ((y3 - y1) * (x2 - x3))
-                    
-                    backface_start = backface(x1,y1,z1,x2,y2,z2,x3,y3,z3)
-        
-                    i = 0
-                    while points[i][2] < 0:
-                        i = (i+1)%len(points)
+                trimZero(points, 2, 3)
+#                if minZ < 0:
+#                    x1 = points[0][0]
+#                    y1 = points[0][1]
+#                    z1 = points[0][2] #NO
+#                    x2 = points[1][0]
+#                    y2 = points[1][1]
+#                    z2 = points[1][2]
+#                    x3 = points[2][0]
+#                    y3 = points[2][1]
+#                    z3 = points[2][2] #CRASHES LESS THEN THREE
+#                   
+#                    #this is really wrong 
+#                    def backface(x1,y1,z1,x2,y2,z2,x3,y3,z3):
+#                        return ((x3 - x1) * (y2 - y3)) > ((y3 - y1) * (x2 - x3))
+#                    
+#                    backface_start = backface(x1,y1,z1,x2,y2,z2,x3,y3,z3)
+#        
+#                    i = 0
+#                    while points[i][2] < 0:
+#                        i = (i+1)%len(points)
+#                        
+#                    while points[i][2] > 0:
+#                        i = (i+1)%len(points)
+#                    point_a = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
+#                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0) 
+#                    cut_start = i
+#                    while points[i][2] < 0:
+#                        i = (i+1)%len(points)
+#                    point_b = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
+#                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
+#                    cut_end = i
+#                    if cut_start > cut_end:
+#                        for  i in range(cut_start,len(points)):
+#                            points.pop(cut_start)
+#                        for  i in range(0,cut_end):
+#                            points.pop(0)
+#                            
+#                        backface_end = backface(x1,y1,z1,point_a[0],point_a[1],point_a[2],point_b[0],point_b[1],point_b[2])
+#        
+#                        if backface_start != backface_end:
+#                            points.insert(cut_start,point_a)
+#                            points.insert(cut_start,point_b)
+#                        else:
+#                            points.insert(cut_start,point_b)
+#                            points.insert(cut_start,point_a)
+#                    else:
+#                        for  i in range(cut_start,cut_end):
+#                            points.pop(cut_start)
+#                        points.insert(cut_start,point_b)
+#                        points.insert(cut_start,point_a)
                         
-                    while points[i][2] > 0:
-                        i = (i+1)%len(points)
-                    point_a = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
-                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0) 
-                    cut_start = i
-                    while points[i][2] < 0:
-                        i = (i+1)%len(points)
-                    point_b = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
-                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
-                    cut_end = i
-                    if cut_start > cut_end:
-                        for  i in range(cut_start,len(points)):
-                            points.pop(cut_start)
-                        for  i in range(0,cut_end):
-                            points.pop(0)
-                            
-                        backface_end = backface(x1,y1,z1,point_a[0],point_a[1],point_a[2],point_b[0],point_b[1],point_b[2])
-        
-                        if backface_start != backface_end:
-                            points.insert(cut_start,point_a)
-                            points.insert(cut_start,point_b)
-                        else:
-                            points.insert(cut_start,point_b)
-                            points.insert(cut_start,point_a)
-                    else:
-                        for  i in range(cut_start,cut_end):
-                            points.pop(cut_start)
-                        points.insert(cut_start,point_b)
-                        points.insert(cut_start,point_a)
+                        
                 return DrawEngine.ScreenPoly(points, self.color_r, self.color_g, self.color_b)
             return None
 
@@ -301,22 +326,28 @@ for y in range(0,n):
                                                       DrawEngine.WorldPoint(0+x*l, 0, l+y*l),
                                                       DrawEngine.WorldPoint(0+x*l, 0, 0+y*l), 
                                                       DrawEngine.WorldPoint(l+x*l, 0, 0+y*l)]))
-WIDTH = 1600
-HEIGHT = 800
+WIDTH = 1200
+HEIGHT = 500
 
 
-left_camera = DrawEngine.Camera(0,0,0, 0,       0, 0,0,0, world_objects, 0,       0, WIDTH/2, HEIGHT)
-right_camera = DrawEngine.Camera(0,0,0, WIDTH/2,0, 0,0,0, world_objects ,WIDTH/2 ,0, WIDTH/2, HEIGHT)
+left_camera = DrawEngine.Camera(-200,200,-200, 0,       0, 0,0,0, world_objects, 0,       100, WIDTH/2, HEIGHT-100)
+right_camera = DrawEngine.Camera(-200,200,-200, WIDTH/2,0, 0,0,0, world_objects ,WIDTH/2 ,100, WIDTH/2, HEIGHT-100)
 
 def render_field(canvas):
     right_camera.draw(canvas)
     left_camera.draw(canvas)
-    canvas.draw_line((WIDTH/2, 0), (WIDTH/2, HEIGHT), 4, 'White')
+    canvas.draw_line((WIDTH/2, 100), (WIDTH/2, HEIGHT), 4, 'White')
+    canvas.draw_line((0, 100), (WIDTH, 100), 4, 'White')
+    canvas.draw_text('Avery Whitaker | Split-Screen Multiplayer Prototype V0.1', (30, 50), 48, 'White')
         
 #####################################################################
 #### Key handler stuff for testing
     
 keys_down = {
+    simplegui.KEY_MAP['z']: False,
+    simplegui.KEY_MAP['x']: False,
+    simplegui.KEY_MAP['k']: False,
+    simplegui.KEY_MAP['l']: False,
     simplegui.KEY_MAP['up']: False,
     simplegui.KEY_MAP['down']: False,
     simplegui.KEY_MAP['left']: False,
@@ -366,6 +397,17 @@ def key_action():
         right_camera.move(0,10,0)
         #left_camera.turn(0,0,math.pi * -0.025)
         #right_camera.turn(0)
+        
+    if keys_down[simplegui.KEY_MAP["z"]]:
+        left_camera.turn(-.05)
+    if keys_down[simplegui.KEY_MAP["x"]]:
+        left_camera.turn(0.05)
+        
+    if keys_down[simplegui.KEY_MAP["k"]]:
+        right_camera.turn(-0.05)
+    if keys_down[simplegui.KEY_MAP["l"]]:
+        right_camera.turn(0.05)
+        
         
     if keys_down[simplegui.KEY_MAP["w"]]:
         left_camera.move(0,0,-10)
