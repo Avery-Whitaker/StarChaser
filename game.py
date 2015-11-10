@@ -149,296 +149,293 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
 
         
     
-
-class DrawEngine:
-    class Camera:
-        def draw(self, canvas):
-            
-            canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 3, 'White','Black')
-             
-            list = []
-            for a in world_objects:
-                b = a.transform(self)
-                if b is not None:
-                    list.append(b)
-            list.sort()
-            for twoDPoly in list:
-                twoDPoly.draw(canvas, self)
-            
-            canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 3, 'Black')
-               
-               
-        def __init__(self, x, y, z, yAngle, world_objects, screen_x, screen_y, screen_width, screen_height):
-            self.x = x
-            self.y = y
-            self.z = z
-            self.y_rotate = yAngle
-            self.world_objects = world_objects
-            self.screen_x = screen_x
-            self.screen_y = screen_y
-            self.screen_width = screen_width
-            self.screen_height = screen_height
-            self.focalLength = 250.0
-            self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
-            
-        def move(self, x_change, y_change, z_change):                                                                                                        #WHY????
-            self.x += x_change
-            self.y += y_change
-            self.z += z_change
-            
-        def set_pos(self, x, y, z):
-            self.x = x
-            self.y = y
-            self.z = z
-            
-        def turn(self, y_change):
-            self.y_rotate += y_change
-            
-        def set_angle(self, y_angle):
-            self.y_rotate = y_angle
-    
-    
-    class WorldPoint:
-        def __init__(self,x,y,z):
-            self.x = x
-            self.y = y
-            self.z = z
-            
-        def move(self,a,b,c):
-            self.x += a
-            self.y += b
-            self.z += c
-            
-        def __getitem__(self,key):
-            if key == 0:
-                return self.x
-            if key == 1:
-                return self.y
-            if key == 2:
-                return self.z
-
-        def transform(self,camera):
-            x = self.x + camera.x
-            y = self.y + camera.y 
-            z = self.z + camera.z
-            cos_y = math.cos(camera.y_rotate)
-            sin_y = math.sin(camera.y_rotate)
-            old_x = x
-            x = x * cos_y - (z+camera.focalLength)*sin_y
-            z = (z+camera.focalLength) * cos_y + old_x * sin_y - camera.focalLength
-            if camera.focalLength + z == 0:
-                scale = 1000000000000
-            else:
-                scale = camera.focalLength/(camera.focalLength + z)
-            return DrawEngine.ScreenPoint(
-                camera.vanishingPointX + x * abs(scale), 
-                camera.vanishingPointY + y * abs(scale), scale)
-        
-    class WorldPoly:
-        def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
-            self.points = points
-            self.color_r = color_r
-            self.color_g = color_g
-            self.color_b = color_b
-            
-        def __getitem__(self,key):
-            return self.points[key]
-
-        def transform(self, camera):
-            line_thinkness = 1
-            points = []
-            maxZ = -1000000000
-            minZ = 10000000000
-            for point in self.points:
-                points.append( point.transform(camera) )
-                if points[len(points)-1][2] > maxZ:
-                    maxZ = points[len(points)-1][2]
-                if points[len(points)-1][2] < maxZ:
-                    minZ = points[len(points)-1][2]
-            if maxZ > 0:
-                if minZ < 0:
-                    trimZero(points, 2, 3)
-                return DrawEngine.ScreenPoly(points, self.color_r, self.color_g, self.color_b)
-            return None
-        
-        #prototope temp
-        def min_x(self):
-            min_x = 10000000000
-            for point in self.points:
-                if point[0] < min_x:
-                    min_x = point[0]
-            return min_x
-        def max_x(self):
-            max_x = -1000000000
-            for point in self.points:
-                if point[0] > max_x:
-                    max_x = point[0]
-            return max_x
-        
-        def min_z(self):
-            min_z = 10000000000
-            for point in self.points:
-                if point[2] < min_z:
-                    min_z = point[2]
-            return min_z
-        
-        def max_z(self):
-            max_z = -1000000000
-            for point in self.points:
-                if point[2] > max_z:
-                    max_z = point[2]
-            return max_z
-           
-        
-    class WorldPlayer(WorldPoint):
-        def __init__(self,x,y,z):
-            DrawEngine.WorldPoint.__init__(self, x,-75,z)
-            self.y_vel = 1
-            
-        def update(self):
-            if self.y_vel < 0:
-                 self.y += self.y_vel
-            elif self.y <= -75 and self.y+self.y_vel > -75:
-             
-                collide = False
-
-                for item in world_objects:
-                    if item != player_a and item != player_b:
-                        if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.z >= item.min_z()-50  and self.z <= item.max_z()+50 :
-                            collide = True
-                            break
-
-                if not collide:
-                    self.y += self.y_vel
-                else:
-                    self.y = -75
-                    self.y_vel = 0
-            else:
-                self.y += self.y_vel
-
-            
-            # if collide:
-            #     self.y = 100
-            # else:
-            #     self.y = 500
-            
-                
-            self.y_vel += 3
-            
-        def jump(self):
-            if self.y == -75:
-                collide = False
-
-                for item in world_objects:
-                    if item != player_a and item != player_b:
-                        if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.z >= item.min_z()-50  and self.z <= item.max_z()+50 :
-                            collide = True
-                            break
-                #cases: in air above, on platform, below platform
-
-                if collide: 
-                    self.y_vel -= 40
-            
-        def forward(self, angle):
-            self.z += 20 * math.sin(angle)
-            self.x += 20 * math.cos(angle)
-            
-        def left(self, angle):
-            self.x -= 20 * math.sin(angle)
-            self.z += 20 * math.cos(angle)
-            
-        def right(self, angle):
-            self.x += 20 * math.sin(angle)
-            self.z -= 20 * math.cos(angle)
-           
-        def back(self, angle):
-            self.z -= 20 * math.sin(angle)
-            self.x -= 20 * math.cos(angle)
-            
+class Camera:
+    def draw(self, canvas):
          
+        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 3, 'White','Black')
+            
+        list = []
+        for a in world_objects:
+            b = a.transform(self)
+            if b is not None:
+                list.append(b)
+        list.sort()
+        for twoDPoly in list:
+            twoDPoly.draw(canvas, self)
         
-    #class ScreenImage:
-    #    def __init__(self,x,y,image)
-    #    	pass
-                
+        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 3, 'Black')
+           
+           
+    def __init__(self, x, y, z, yAngle, world_objects, screen_x, screen_y, screen_width, screen_height):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.y_rotate = yAngle
+        self.world_objects = world_objects
+        self.screen_x = screen_x
+        self.screen_y = screen_y
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.focalLength = 250.0
+        self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
+        
+    def move(self, x_change, y_change, z_change):                                                                                                        #WHY????
+        self.x += x_change
+        self.y += y_change
+        self.z += z_change
+        
+    def set_pos(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+        
+    def turn(self, y_change):
+        self.y_rotate += y_change
+        
+    def set_angle(self, y_angle):
+        self.y_rotate = y_angle
+
+class WorldAngle:
+    def __init__(self, y_angle):
+        self.y_angle = y_angle
+    
+    def angleBetweenWorldPoints(point_a, point_b):
+        return WorldAngle(math.atan2(point_b[2] - point_a[2], point_b[0] - point_a[0]))
+        
+ 
+class WorldPoint:
+    def __init__(self,x,y,z):
+        self.x = x
+        self.y = y
+        self.z = z
+        
+    def move(self,a,b,c):
+        self.x += a
+        self.y += b
+        self.z += c
+        
+    def __getitem__(self,key):
+        if key == 0:
+            return self.x
+        if key == 1:
+            return self.y
+        if key == 2:
+            return self.z
+    def transform(self,camera):
+        x = self.x + camera.x
+        y = self.y + camera.y 
+        z = self.z + camera.z
+        cos_y = math.cos(camera.y_rotate)
+        sin_y = math.sin(camera.y_rotate)
+        old_x = x
+        x = x * cos_y - (z+camera.focalLength)*sin_y
+        z = (z+camera.focalLength) * cos_y + old_x * sin_y - camera.focalLength
+        if camera.focalLength + z == 0:
+            scale = 1000000000000
+        else:
+            scale = camera.focalLength/(camera.focalLength + z)
+        return ScreenPoint(
+            camera.vanishingPointX + x * abs(scale), 
+            camera.vanishingPointY + y * abs(scale), scale)
+    
+class WorldPoly:
+    def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
+        self.points = points
+        self.color_r = color_r
+        self.color_g = color_g
+        self.color_b = color_b
+        
+    def __getitem__(self,key):
+        return self.points[key]
+    def transform(self, camera):
+        line_thinkness = 1
+        points = []
+        maxZ = -1000000000
+        minZ = 10000000000
+        for point in self.points:
+            points.append( point.transform(camera) )
+            if points[len(points)-1][2] > maxZ:
+                maxZ = points[len(points)-1][2]
+            if points[len(points)-1][2] < maxZ:
+                minZ = points[len(points)-1][2]
+        if maxZ > 0:
+            if minZ < 0:
+                trimZero(points, 2, 3)
+            return ScreenPoly(points, self.color_r, self.color_g, self.color_b)
+        return None
+    
+    #prototope temp
+    def min_x(self):
+        min_x = 10000000000
+        for point in self.points:
+            if point[0] < min_x:
+                min_x = point[0]
+        return min_x
+    def max_x(self):
+        max_x = -1000000000
+        for point in self.points:
+            if point[0] > max_x:
+                max_x = point[0]
+        return max_x
+    
+    def min_z(self):
+        min_z = 10000000000
+        for point in self.points:
+            if point[2] < min_z:
+                min_z = point[2]
+        return min_z
+    
+    def max_z(self):
+        max_z = -1000000000
+        for point in self.points:
+            if point[2] > max_z:
+                max_z = point[2]
+        return max_z
+       
+    
+class WorldPlayer(WorldPoint):
+    def __init__(self,x,y,z):
+        WorldPoint.__init__(self, x,-75,z)
+        self.y_vel = 1
+        
+    def update(self):
+        if self.y_vel < 0:
+             self.y += self.y_vel
+        elif self.y <= -75 and self.y+self.y_vel > -75:
+         
+            collide = False
+            for item in world_objects:
+                if item != player_a and item != player_b:
+                    if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.z >= item.min_z()-50  and self.z <= item.max_z()+50 :
+                        collide = True
+                        break
+            if not collide:
+                self.y += self.y_vel
+            else:
+                self.y = -75
+                self.y_vel = 0
+        else:
+            self.y += self.y_vel
+        
+        # if collide:
+        #     self.y = 100
+        # else:
+        #     self.y = 500
+        
+            
+        self.y_vel += 3
+       
+    def jump(self):
+        if self.y == -75:
+            collide = False
+            for item in world_objects:
+               if item != player_a and item != player_b:
+                    if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.z >= item.min_z()-50  and self.z <= item.max_z()+50 :
+                        collide = True
+                        break
+            #cases: in air above, on platform, below platform
+            if collide: 
+                self.y_vel -= 40
+       
+    def forward(self, angle):
+        self.z += 20 * math.sin(angle)
+        self.x += 20 * math.cos(angle)
+        
+    def left(self, angle):
+        self.x -= 20 * math.sin(angle)
+        self.z += 20 * math.cos(angle)
+        
+    def right(self, angle):
+        self.x += 20 * math.sin(angle)
+        self.z -= 20 * math.cos(angle)
+       
+    def back(self, angle):
+        self.z -= 20 * math.sin(angle)
+        self.x -= 20 * math.cos(angle)
+        
+     
+     
+#class ScreenImage:
+#    def __init__(self,x,y,image)
+#    	pass
+             
     #    def draw(self, canvas, camera):
     #         pass
             #crop so entirly whiten camera
                      
     #       canvas.draw_image(image, center_source, width_height_source, center_dest, width_height_dest, rotation)
         
-    class ScreenPoint:
-        def __init__(self,x,y,scale):
-            self.x = x
-            self.y = y
-            self.scale = scale
+class ScreenPoint:
+    def __init__(self,x,y,scale):
+        self.x = x
+        self.y = y
+        self.scale = scale
+       
+        self.priority = scale
+    def __getitem__(self,key):
+        if key == 0:
+            return self.x
+        if key == 1:
+            return self.y
+        if key == 2:
+            return self.scale
             
-            self.priority = scale
+    def __cmp__(self, other):
+        if self.priority < other.priority:
+            return -1
+        elif self.priority == other.priority:
+            return 0
+        return 1
+            
+    def draw(self, canvas, camera):
+        line_width = 5
+        radius = 30
+        if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
+            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), radius * self.scale, line_width, 'Red','Red')
 
-        def __getitem__(self,key):
-            if key == 0:
-                return self.x
-            if key == 1:
-                return self.y
-            if key == 2:
-                return self.scale
             
-        def __cmp__(self, other):
-            if self.priority < other.priority:
-                return -1
-            elif self.priority == other.priority:
-                return 0
-            return 1
-            
-        def draw(self, canvas, camera):
-            line_width = 5
-            radius = 30
-            if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
-                canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), radius * self.scale, line_width, 'Red','Red')
-    
-            
-    class ScreenPoly:
-        def __init__(self, points, color_r, color_g, color_b):
-            self.color_r = color_r
-            self.color_g = color_g
-            self.color_b = color_b
-            
-            self.points = points
-            self.priority = 0
-            for point in self.points:
-                self.priority += point[2]
-            self.priority /= len(self.points)
+class ScreenPoly:
+    def __init__(self, points, color_r, color_g, color_b):
+        self.color_r = color_r
+        self.color_g = color_g
+        self.color_b = color_b
         
-        def __getitem__(self,key):
-            return list[key]
+        self.points = points
+        self.priority = 0
+        for point in self.points:
+            self.priority += point[2]
+        self.priority /= len(self.points)
         
-        def __cmp__(self, other):
-            if self.priority < other.priority:
-                return -1
-            elif self.priority == other.priority:
-                return 0
-            return 1
+    def __getitem__(self,key):
+        return list[key]
+        
+    def __cmp__(self, other):
+        if self.priority < other.priority:
+            return -1
+        elif self.priority == other.priority:
+            return 0
+        return 1
             
-        def draw(self, canvas, camera):
-            new = []
-            for point in self.points:
-                new.append([point[0]+camera.screen_x, point[1]+camera.screen_y])
-            minX =  10000000000
-            maxX = -10000000000
-            minY = 1000000000
-            maxY = -10000000000
-            for point in new:
-                if point[0] < minX:
-                    minX = point[0]
-                if point[1] < minY:
-                    minY = point[1]
-                if point[0] > maxX:
-                    maxX = point[0]
-                if point[1] > maxY:
-                    maxY = point[1]
-            if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
-                polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
-                canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
+    def draw(self, canvas, camera):
+        new = []
+        for point in self.points:
+            new.append([point[0]+camera.screen_x, point[1]+camera.screen_y])
+        minX =  10000000000
+        maxX = -10000000000
+        minY = 1000000000
+        maxY = -10000000000
+        for point in new:
+            if point[0] < minX:
+                minX = point[0]
+            if point[1] < minY:
+                minY = point[1]
+            if point[0] > maxX:
+                maxX = point[0]
+            if point[1] > maxY:
+                maxY = point[1]
+        if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
+            polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
+            canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
 
 world_objects = []
 n = 6
@@ -447,13 +444,13 @@ l = 300
 for y in range(0,n):
     for x in range(0,n):
         if random.random() > 0.2:
-            world_objects.append(DrawEngine.WorldPoly([DrawEngine.WorldPoint(l+x*l, 0, l+y*l),
-                                                      DrawEngine.WorldPoint(0+x*l, 0, l+y*l),
-                                                      DrawEngine.WorldPoint(0+x*l, 0, 0+y*l), 
-                                                      DrawEngine.WorldPoint(l+x*l, 0, 0+y*l)]))
+            world_objects.append(WorldPoly([WorldPoint(l+x*l, 0, l+y*l),
+                                                      WorldPoint(0+x*l, 0, l+y*l),
+                                                      WorldPoint(0+x*l, 0, 0+y*l), 
+                                                      WorldPoint(l+x*l, 0, 0+y*l)]))
 
-player_a = DrawEngine.WorldPlayer(world_objects[0][0][0]-l/2, -75, world_objects[0][0][2]-l/2)
-player_b = DrawEngine.WorldPlayer(world_objects[5][0][0]-l/2, -75, world_objects[5][0][2]-l/2)
+player_a = WorldPlayer(world_objects[0][0][0]-l/2, -75, world_objects[0][0][2]-l/2)
+player_b = WorldPlayer(world_objects[5][0][0]-l/2, -75, world_objects[5][0][2]-l/2)
 
 world_objects.append(player_a)
 world_objects.append(player_b)
@@ -462,8 +459,8 @@ world_objects.append(player_b)
 WIDTH = 1200
 HEIGHT = 600
 #                            (self, x, y, z, yAngle, world_objects, screen_x, screen_y, screen_width, screen_height)
-left_camera = DrawEngine.Camera(-200,200,-200,  0, world_objects,     50,       100,      475,      HEIGHT-125)
-right_camera = DrawEngine.Camera(-200,200,-200,  0, world_objects ,WIDTH/2+50 , 100,     475,      HEIGHT-125)
+left_camera = Camera(-200,200,-200,  0, world_objects,     50,       100,      475,      HEIGHT-125)
+right_camera = Camera(-200,200,-200,  0, world_objects ,WIDTH/2+50 , 100,     475,      HEIGHT-125)
   
                 
 def render_field(canvas):
