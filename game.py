@@ -6,9 +6,6 @@ import random
 
 ##########################################################################################
 def trimZero(points, axis, axis_n):
-        def backface(x1,y1,x2,y2,x3,y3):
-            return ((x3 - x1) * (y2 - y3)) > ((y3 - y1) * (x2 - x3))
-                   
         #stolen from internet https://paolocrosetto.wordpress.com/python-code/
         #works like magic
         def check_convexity(p):
@@ -110,9 +107,6 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
     
 
 class DrawEngine:
-
-    
-    
     class Camera:
         def draw(self, canvas):
             
@@ -147,6 +141,11 @@ class DrawEngine:
             self.x += x_change
             self.y += y_change
             self.z += z_change
+            
+        def set_pos(self, x, y, z):
+            self.x = x
+            self.y = y
+            self.z = z
             
         def turn(self, y_change):
             self.y_rotate += y_change
@@ -194,6 +193,9 @@ class DrawEngine:
             self.color_r = color_r
             self.color_g = color_g
             self.color_b = color_b
+            
+        def __getitem__(self,key):
+            return self.points[key]
 
         def transform(self, camera):
             line_thinkness = 1
@@ -211,8 +213,92 @@ class DrawEngine:
                     trimZero(points, 2, 3)
                 return DrawEngine.ScreenPoly(points, self.color_r, self.color_g, self.color_b)
             return None
-
-    #class ScreenSprite
+        
+        #prototope temp
+        def min_x(self):
+            min_x = 10000000000
+            for point in self.points:
+                if point[0] < min_x:
+                    min_x = point[0]
+            return min_x
+        def max_x(self):
+            max_x = -1000000000
+            for point in self.points:
+                if point[0] > max_x:
+                    max_x = point[0]
+            return max_x
+        
+        def min_z(self):
+            min_z = 10000000000
+            for point in self.points:
+                if point[2] < min_z:
+                    min_z = point[2]
+            return min_z
+        
+        def max_z(self):
+            max_z = -1000000000
+            for point in self.points:
+                if point[2] > max_z:
+                    max_z = point[2]
+            return max_z
+           
+        
+    class WorldPlayer(WorldPoint):
+        def __init__(self,x,y,z):
+            DrawEngine.WorldPoint.__init__(self, x,y,z)
+            self.y_vel = 0
+            
+        def update(self):
+            
+            collide = False
+            
+            for item in world_objects:
+                if item != player_a and item != player_b:
+                    if self.x > item.min_x() and self.x < item.max_x() and self.z > item.min_z() and self.z < item.max_z():
+                        collide = True
+                        break
+            
+            
+            self.y += self.y_vel
+            
+            if self.y_vel > 0 and not collide:
+                self.y = -75
+            
+            # if collide:
+            #     self.y = 100
+            # else:
+            #     self.y = 500
+            
+                
+            self.y_vel += 1
+            
+        def jump(self):
+            
+            collide = False
+            
+            for item in world_objects:
+                if item != player_a and item != player_b:
+                    if self.x > item.min_x() and self.x < item.max_x() and self.z > item.min_z() and self.z < item.max_z():
+                        collide = True
+                        break
+            if collide:   
+                if self.y >= -75:
+                    self.y_vel -= 5
+                self.y_vel -= 0.1
+            
+        def forward(self):
+            self.z += 10
+            
+        def left(self):
+            self.x -= 10
+            
+        def right(self):
+            self.x += 10
+            
+        def back(self):
+            self.z -= 10
+            
+         
         
     #class ScreenImage:
     #    def __init__(self,x,y,image)
@@ -298,20 +384,22 @@ class DrawEngine:
                 canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
 
 world_objects = []
-n = 12
+n = 8
 l = 300 
 
 for y in range(0,n):
     for x in range(0,n):
-        if random.random() > 0.75:
+        if random.random() > 0.4:
             world_objects.append(DrawEngine.WorldPoly([DrawEngine.WorldPoint(l+x*l, 0, l+y*l),
                                                       DrawEngine.WorldPoint(0+x*l, 0, l+y*l),
                                                       DrawEngine.WorldPoint(0+x*l, 0, 0+y*l), 
                                                       DrawEngine.WorldPoint(l+x*l, 0, 0+y*l)]))
 
-test_point = DrawEngine.WorldPoint(200, 0, 200)
+player_a = DrawEngine.WorldPlayer(world_objects[0][0][0]-l/2, -75, world_objects[0][0][2]-l/2)
+player_b = DrawEngine.WorldPlayer(world_objects[5][0][0]-l/2, -75, world_objects[5][0][2]-l/2)
 
-world_objects.append(test_point)
+world_objects.append(player_a)
+world_objects.append(player_b)
 
             
 WIDTH = 1200
@@ -328,6 +416,23 @@ def render_field(canvas):
     #canvas.draw_line((WIDTH/2, 100), (WIDTH/2, HEIGHT), 4, 'White')
     #canvas.draw_line((0, 100), (WIDTH, 100), 4, 'White')
     canvas.draw_text('Avery Whitaker | Split-Screen Multiplayer Prototype V0.2', (30, 50), 48, 'Red')
+    
+    
+    player_a.update()
+    player_b.update()
+    left_camera.set_pos(-player_a.x, 200-player_a.y, 100-player_a.z)
+    right_camera.set_pos(-player_b.x, 200-player_b.y, 100-player_b.z)
+    
+    
+    random.shuffle(world_objects)
+
+    if random.random() > 0.99:
+        for item in world_objects:
+            if item != player_a and item != player_b:
+                world_objects.remove(item)
+                break
+    
+    
         
 #####################################################################
 #### Key handler stuff for testing
@@ -361,6 +466,8 @@ keys_down = {
     simplegui.KEY_MAP['z']: False,
     simplegui.KEY_MAP['up']: False,
     simplegui.KEY_MAP['down']: False,
+    16: False,
+    simplegui.KEY_MAP['space']: False,
     simplegui.KEY_MAP['left']: False,
     simplegui.KEY_MAP['right']: False
 }
@@ -376,52 +483,62 @@ def set_keyup_handler(k):
 def key_action():
     global draw_engine,keys_down
  
+#    if keys_down[simplegui.KEY_MAP["up"]]:
+#        right_camera.move(0,0,-10)
+#    if keys_down[simplegui.KEY_MAP["down"]]:
+#        right_camera.move(0,0,10)
+#    if keys_down[simplegui.KEY_MAP["left"]]:
+#        right_camera.move(-10,0,0)
+#    if keys_down[simplegui.KEY_MAP["right"]]:
+#        right_camera.move(10,0,0)
+#    if keys_down[simplegui.KEY_MAP["o"]]:
+#        right_camera.move(0,-10,0)
+#    if keys_down[simplegui.KEY_MAP["p"]]:
+#        right_camera.move(0,10,0)
+#    if keys_down[simplegui.KEY_MAP["z"]]:
+#        left_camera.turn(-.05)
+#    if keys_down[simplegui.KEY_MAP["x"]]:
+#        left_camera.turn(0.05)
+#    if keys_down[simplegui.KEY_MAP["k"]]:
+#        right_camera.turn(-0.05)
+#    if keys_down[simplegui.KEY_MAP["l"]]:
+#        right_camera.turn(0.05)
+#    if keys_down[simplegui.KEY_MAP["w"]]:
+#        left_camera.move(0,0,-10)
+#    if keys_down[simplegui.KEY_MAP["a"]]:
+#        left_camera.move(-10,0,0)
+#    if keys_down[simplegui.KEY_MAP["s"]]:
+#        left_camera.move(0,0,10)
+#    if keys_down[simplegui.KEY_MAP["d"]]:
+#        left_camera.move(10,0,0)
+#    if keys_down[simplegui.KEY_MAP["q"]]:
+#        left_camera.move(0,-10,0)
+#    if keys_down[simplegui.KEY_MAP["e"]]:
+#        left_camera.move(0,10,0)
+
     if keys_down[simplegui.KEY_MAP["up"]]:
-        right_camera.move(0,0,-10)
+        player_b.forward()
     if keys_down[simplegui.KEY_MAP["down"]]:
-        right_camera.move(0,0,10)
+        player_b.back()
     if keys_down[simplegui.KEY_MAP["left"]]:
-        right_camera.move(-10,0,0)
+        player_b.left()
     if keys_down[simplegui.KEY_MAP["right"]]:
-        right_camera.move(10,0,0)
-    if keys_down[simplegui.KEY_MAP["o"]]:
-        right_camera.move(0,-10,0)
-    if keys_down[simplegui.KEY_MAP["p"]]:
-        right_camera.move(0,10,0)
-    if keys_down[simplegui.KEY_MAP["z"]]:
-        left_camera.turn(-.05)
-    if keys_down[simplegui.KEY_MAP["x"]]:
-        left_camera.turn(0.05)
-    if keys_down[simplegui.KEY_MAP["k"]]:
-        right_camera.turn(-0.05)
-    if keys_down[simplegui.KEY_MAP["l"]]:
-        right_camera.turn(0.05)
-    if keys_down[simplegui.KEY_MAP["w"]]:
-        left_camera.move(0,0,-10)
-    if keys_down[simplegui.KEY_MAP["a"]]:
-        left_camera.move(-10,0,0)
+        player_b.right()
+        
+    if keys_down[16]:
+        player_b.jump()
+        
     if keys_down[simplegui.KEY_MAP["s"]]:
-        left_camera.move(0,0,10)
+        player_a.back()
+    if keys_down[simplegui.KEY_MAP["a"]]:
+        player_a.left()
     if keys_down[simplegui.KEY_MAP["d"]]:
-        left_camera.move(10,0,0)
-    if keys_down[simplegui.KEY_MAP["q"]]:
-        left_camera.move(0,-10,0)
-    if keys_down[simplegui.KEY_MAP["e"]]:
-        left_camera.move(0,10,0)
+        player_a.right()
+    if keys_down[simplegui.KEY_MAP["w"]]:
+        player_a.forward()
         
-        
-    if keys_down[simplegui.KEY_MAP["t"]]:
-        test_point.move(0,-10,0)
-    if keys_down[simplegui.KEY_MAP["g"]]:
-        test_point.move(0,10,0)
-    if keys_down[simplegui.KEY_MAP["f"]]:
-        test_point.move(10,0,0)
-    if keys_down[simplegui.KEY_MAP["h"]]:
-        test_point.move(-10,0,0)
-    if keys_down[simplegui.KEY_MAP["r"]]:
-        test_point.move(0,0,-10)
-    if keys_down[simplegui.KEY_MAP["y"]]:
-        test_point.move(0,0,10)
+    if keys_down[simplegui.KEY_MAP["space"]]:
+        player_a.jump()
 
 
 def game_loop(canvas):
