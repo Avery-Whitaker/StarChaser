@@ -78,8 +78,10 @@ def trimZero(points, axis, axis_n):
             for i in range(0,axis_n):
                 new_point.append(0)
             if axis_n == 3:       
-                new_point[axis-2] = (max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2]))*max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis])) + min(point_b[axis-2],point_a[axis-2])
-                new_point[axis-1] = (max(point_a[axis-1],point_b[axis-1])-min(point_b[axis-1],point_a[axis-1]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-1],point_a[axis-1])
+                #new_point[axis-2] = (max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2]))*max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis])) + min(point_b[axis-2],point_a[axis-2])
+                #new_point[axis-1] = (max(point_a[axis-1],point_b[axis-1])-min(point_b[axis-1],point_a[axis-1]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-1],point_a[axis-1])
+                new_point[axis-2] = (-(point_b[axis-2]-point_a[axis-2])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-2]
+                new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
                 new_point[axis] = 0
                 return [new_point[0],new_point[1],new_point[2]]
             if axis_n == 2:
@@ -99,7 +101,7 @@ def trimZero(points, axis, axis_n):
             i = 0
             while points[i][axis] < 0:
                 i = (i+1)%len(points)
-            while points[i][axis] >= 0:
+            while points[i][axis] > 0:
                 i = (i+1)%len(points)
 
             point_a = intersection(points[i],points[i-1],axis,axis_n)
@@ -159,7 +161,7 @@ class WorldAngle:
         self.angle_xy += turn_amount
     
     def angleBetweenWorldPoints(point_a, point_b):
-        return WorldAngle(math.atan2(point_b[1] - point_a[1], point_b[0] - point_a[0]))
+        return math.atan2(point_b[1] - point_a[1], point_b[0] - point_a[0])
 
 class WorldPoint:
     def __init__(self,x,y,z):
@@ -226,8 +228,8 @@ class Camera(WorldAngle, WorldPoint):
         self.screen_y = screen_y
         self.screen_width = screen_width
         self.screen_height = screen_height
-        self.focalLength = 150.0
-        self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/4.0
+        self.focalLength = 250.0
+        self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
     
 class WorldPoly:
     def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
@@ -325,20 +327,20 @@ class WorldPlayer(WorldPoint, WorldAngle):
                 self.z_vel += 40
        
     def forward(self):
-        self.y += 20 * math.sin(self.angle_xy)
-        self.x += 20 * math.cos(self.angle_xy)
+        self.y += 20 * math.cos(self.angle_xy)
+        self.x += 20 * math.sin(self.angle_xy)
         
     def left(self):
-        self.x -= 20 * math.sin(self.angle_xy)
-        self.y += 20 * math.cos(self.angle_xy)
+        self.x -= 20 * math.cos(self.angle_xy)
+        self.y += 20 * math.sin(self.angle_xy)
         
     def right(self):
-        self.x += 20 * math.sin(self.angle_xy)
-        self.y -= 20 * math.cos(self.angle_xy)
+        self.x += 20 * math.cos(self.angle_xy)
+        self.y -= 20 * math.sin(self.angle_xy)
        
     def back(self):
-        self.y -= 20 * math.sin(self.angle_xy)
-        self.x -= 20 * math.cos(self.angle_xy)
+        self.y -= 20 * math.cos(self.angle_xy)
+        self.x -= 20 * math.sin(self.angle_xy)
         
 #class ScreenImage:
 #    def __init__(self,x,y,image)
@@ -380,7 +382,6 @@ class ScreenPoint:
         if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
             canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), radius * self.scale, line_width, 'Red','Red')
 
-            
 class ScreenPoly:
     def __init__(self, points, color_r, color_g, color_b):
         self.color_r = color_r
@@ -425,7 +426,7 @@ class ScreenPoly:
             canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
 
 world_objects = []
-n = 6
+n = 5
 l = 300 
 
 for y in range(0,n):
@@ -442,15 +443,12 @@ player_b = WorldPlayer(world_objects[5][0][0]-l/2, world_objects[5][0][1]-l/2)
 world_objects.append(player_a)
 world_objects.append(player_b)
 
-            
 WIDTH = 1200
 HEIGHT = 600
 
-#                            (self, x, y, z, yAngle, world_objects, screen_x, screen_y, screen_width, screen_height)
 left_camera = Camera(0,0,0,  0,     50,       100,      475,      HEIGHT-125)
 right_camera = Camera(0,0,200,  0 ,WIDTH/2+50 , 100,     475,      HEIGHT-125)
-  
-                
+         
 def render_frame(canvas):
     canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Cyan')
     
@@ -463,25 +461,26 @@ def render_frame(canvas):
         left_camera.draw(canvas,world_objects)
     #canvas.draw_line((WIDTH/2, 100), (WIDTH/2, HEIGHT), 4, 'White')
     #canvas.draw_line((0, 100), (WIDTH, 100), 4, 'White')
-    canvas.draw_text('Avery Whitaker | (Split-Screen Multiplayer Prototype) V0.4', (30, 50), 48, 'Red')
+    canvas.draw_text('Avery Whitaker | (Split-Screen Multiplayer Prototype) V0.8', (30, 50), 48, 'Red')
     
 def update_world():
     
     player_a.update()
     player_b.update()
-     
-    p1x = player_a[0]
-    p1y = player_a[1]
-    p2x = player_b[0]
-    p2y = player_b[1]
-
-    angle_a =math.atan2(p2y - p1y, p2x - p1x)
-    angle_b = math.atan2(p1y - p2y, p1x - p2x)
     
-    #left_camera.set_angle(math.pi/2-angle_a)
-    #right_camera.set_angle(math.pi/2-angle_b)
-    lenAB = math.sqrt( (p2x-p1x)**2 + (p2y-p1y)**2 )
-    #right_camera.set_pos(-p1x - (p1x-p2x) / lenAB * 300,200-player_a.y, -p1y - (p2y-p1y) / lenAB * 300)
+    left_camera.set_angle_xy(math.pi/2-WorldAngle.angleBetweenWorldPoints(player_a, player_b))
+    right_camera.set_angle_xy(math.pi/2-WorldAngle.angleBetweenWorldPoints(player_b, player_a))
+    
+    temp_angle = math.pi/2 -WorldAngle.angleBetweenWorldPoints(player_a, player_b)
+    
+    #lenAB = math.sqrt( (p2x-p1x)**2 + (p2y-p1y)**2 )
+    
+    
+    #left_camera.set_pos(math.cos(angle_b)*300+player_a.x,  math.sin(angle_b)*300+player_a.y, 300+player_a.z)
+    #right_camera.set_pos(math.cos(angle_a)*300+player_b.x,  math.sin(angle_a)*300+player_b.y,300+player_b.z)
+    
+    
+    # right_camera.set_pos(-p1x - (p1x-p2x) / lenAB * 300,200-player_a.y, -p1y - (p2y-p1y) / lenAB * 300)
     #left_camera.set_pos(-p2x + (p1x-p2x) / lenAB * 300,200-player_b.y, -p2y + (p1y-p2y) / lenAB * 300)
     
     #left_camera.set_pos(-math.sin(angle_a)*100-player_a.x, 200-player_a.y, -math.cos(angle_a)*100-player_a.z)
@@ -491,18 +490,22 @@ def update_world():
     #left_camera.set_pos(-math.cos(-angle_a)*800-player_a.x, 200-player_a.y, -math.sin(-angle_a)*800-player_a.z)
     #right_camera.set_pos(-math.cos(-angle_b)*800-player_b.x, 200-player_b.y, -math.sin(-angle_b)*800-player_b.z)
     
-    left_camera.set_pos(player_a.x, -300+player_a.y, 300+player_a.z)
-    right_camera.set_pos(player_b.x, -300+player_b.y, 300+player_b.z)
+    #left_camera.set_pos(math.cos(temp_angle)*500+player_a.x, math.sin(temp_angle)*500+player_a.y, 300+player_a.z)
     
     
     
-    random.shuffle(world_objects)
-
-    if random.random() > 0.99:
-        for item in world_objects:
-            if item != player_a and item != player_b:
-                world_objects.remove(item)
-                break
+    left_camera.set_pos(player_a.x, player_a.y, 300+player_a.z)
+    right_camera.set_pos(player_b.x, player_b.y, 300+player_b.z)
+    
+    
+#    
+#    random.shuffle(world_objects)
+#
+#    if random.random() > 0.99:
+#        for item in world_objects:
+#            if item != player_a and item != player_b:
+#                world_objects.remove(item)
+#                break
     
 keys_down = {}
 
@@ -517,33 +520,8 @@ def keyup(k):
     global keys_down
     keys_down[k] = False
             
-def key_action():
-    global draw_engine,keys_down
-
-
-#    if keys_down[simplegui.KEY_MAP["up"]]:
-#        right_camera.move(0,10,0)
-#    if keys_down[simplegui.KEY_MAP["down"]]:
-#        right_camera.move(0,-10,0)
-#    if keys_down[simplegui.KEY_MAP["left"]]:
-#        right_camera.move(-10,0,0)
-#    if keys_down[simplegui.KEY_MAP["right"]]:
-#        right_camera.move(10,0,0)
-#    if keys_down[simplegui.KEY_MAP["o"]]:
-#        right_camera.move(0,0,-10)
-#    if keys_down[simplegui.KEY_MAP["p"]]:
-#        right_camera.move(0,0,10)
-#    if keys_down[simplegui.KEY_MAP["k"]]:
-#        right_camera.turn_angle_xy(-0.05)
-#    if keys_down[simplegui.KEY_MAP["l"]]:
-#        right_camera.turn_angle_xy(0.05)
-
-    p1x = player_a[0]
-    p1y = player_a[1]
-    p2x = player_b[0]
-    p2y = player_b[1]
-    
-    player_b.set_angle_xy(math.pi/2)
+def key_action():    
+    player_b.set_angle_xy(0)
     
     if keys_down[simplegui.KEY_MAP["up"]]:
         player_b.forward()
@@ -557,7 +535,7 @@ def key_action():
     if keys_down[16]:
         player_b.jump()
     
-    player_a.set_angle_xy(math.pi/2)
+    player_a.set_angle_xy(0)
     
     if keys_down[simplegui.KEY_MAP["s"]]:
         #player_a.back(math.atan2(p2y - p1y, p2x - p1x))
