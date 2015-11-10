@@ -4,7 +4,78 @@ import random
 
 #in: list of points
 
-#def PolyTrim(points)
+#mutates points_list
+#trims polygon to be in rectangle defined by xMin, xMax yMin, yMax
+def polyTrim(points_list, xMin, xMax, yMin, yMax):
+    
+    def trimZero(points, axis, axis_n):
+        
+        #point on line from point_a to point_b where axis = 0
+        def intersection(point_a, point_b, axis, axis_n):
+            new_point = []
+            for i in range(0,axis_n):
+                new_point.append(0)
+            if axis_n == 3:
+                new_point[axis-2] = (max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-2],point_a[axis-2])
+                new_point[axis-1] = (max(point_a[axis-1],point_b[axis-1])-min(point_b[axis-1],point_a[axis-1]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-1],point_a[axis-1])
+                new_point[axis] = 0
+            if axis_n == 2:
+                new_point[axis] = 0
+                new_point[axis-1] = (point_a[axis]* abs(point_a[axis-1]-point_b[axis-1]))/ (point_a[axis]-point_b[axis]) + point_a[axis-1]
+            return new_point
+        
+        min = 1000000000000
+        max = -1000000000000
+        for point in points:
+            if point[axis] < min:
+                min = point[axis]
+            if point[axis] > max:
+                max = point[axis]
+                
+        if min < 0 and max > 0:
+            i = 0
+            while points[i][axis] < 0:
+                i = (i+1)%len(points)
+
+            while points[i][axis] > 0:
+                i = (i+1)%len(points)
+
+            point_a = intersection(points[i],points[i-1],axis,axis_n)
+            cut_start = i
+            while points[i][axis] < 0:
+                i = (i+1)%len(points)
+            point_b = intersection(points[i],points[i-1],axis,axis_n)
+            cut_end = i
+
+            if cut_start > cut_end:
+                for  i in range(cut_start,len(points)):
+                    points.pop(cut_start)
+                for  i in range(0,cut_end):
+                    points.pop(0)
+                points.insert(cut_start,point_b)
+                points.insert(cut_start,point_a)
+            else:
+                for i in range(cut_start,cut_end):
+                    points.pop(cut_start)
+                points.insert(cut_start,point_a)
+                points.insert(cut_start,point_b) 
+    
+    def trimAxis(points, min, max, axis, axis_n):
+        if min != 0:
+            for point in points:
+                point[axis] -= min
+        trimZero(points, axis, axis_n)
+        for point in points:
+            point[axis] = -(point[axis] + min - max)
+        trimZero(points, axis, axis_n)
+        for point in points:
+            point[axis] = -point[axis] + max
+            
+    trimAxis(points_list, xMin, xMax, 0, 2)
+    trimAxis(points_list, yMin, yMax, 1, 2)
+
+        
+    
 
 class DrawEngine:
           
@@ -27,7 +98,7 @@ class DrawEngine:
             self.y_shift = y_shift
             self.y_rotate = yAngle
             self.world_objects = world_objects
-            self.scren_x = screen_x
+            self.screen_x = screen_x
             self.screen_y = screen_y
             self.screen_width = screen_width
             self.screen_height = screen_height
@@ -116,8 +187,23 @@ class DrawEngine:
         def draw(self, canvas, camera):
             new = []
             for point in self.points:
-                new.append((point[0]+camera.x_shift, point[1]+camera.y_shift))
-            canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
+                new.append([point[0]+camera.x_shift, point[1]+camera.y_shift])
+            minX =  10000000000
+            maxX = -10000000000
+            minY = 1000000000
+            maxY = -10000000000
+            for point in new:
+                if point[0] < minX:
+                    minX = point[0]
+                if point[1] < minY:
+                    minY = point[1]
+                if point[0] > maxX:
+                    maxX = point[0]
+                if point[1] > maxY:
+                    maxY = point[1]
+            if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
+                polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
+                canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
 
     class WorldPoly:
         def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
