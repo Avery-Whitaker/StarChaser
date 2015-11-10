@@ -241,7 +241,6 @@ class DrawEngine:
                     
                     backface_start = backface(self.x1,self.y1,self.z1,self.x2,self.y2,self.z2,self.x3,self.y3,self.z3)
         
-                    #print "In + " + str(points)
                     i = 0
                     while points[i][2] < 0:
                         i = (i+1)%len(points)
@@ -259,15 +258,21 @@ class DrawEngine:
                                ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
                     cut_end = i
                     if cut_start > cut_end:
+                        print "In  + " + str(points)
                         for  i in range(cut_start,len(points)):
                             points.pop(cut_start)
                         for  i in range(0,cut_end):
                             points.pop(0)
-                        #points.insert(cut_start,point_a)
-                        #points.insert(cut_start,point_b)
+                            
+                        print "Cut + " + str(points)
+                        points.insert(cut_start,point_a) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11 
+                        points.insert(cut_start,point_b) #THIS IS THE PROBLEM CASE
+                        print "Out + " + str(points)
                     else:
                         for  i in range(cut_start,cut_end):
                             points.pop(cut_start)
+                        points.insert(cut_start,point_b)
+                        points.insert(cut_start,point_a)
                             
                     backface_end = backface(self.x1,self.y1,self.z1,point_a[0],point_a[1],point_a[2],point_b[0],point_b[1],point_b[2])
         
@@ -275,12 +280,11 @@ class DrawEngine:
                     #    points.insert(cut_start,point_b) #good
                     #    points.insert(cut_start,point_a)
                     #else:
-                    points.insert(cut_start,point_a)
-                    points.insert(cut_start,point_b)
+                    #fpoints.insert(cut_start,point_b)
+                    #points.insert(cut_start,point_a)
                     
                     
                         
-                    #print "Out + " + str(points)
 
                 new = []
                 for point in points:
