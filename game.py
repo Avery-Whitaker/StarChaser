@@ -4,11 +4,36 @@ import math
 #Is there another way to seperate the rendering engine from game?
 class DrawEngine:
     
+
+    
+    
+    class Camera:
+        def __init__(self, x, y, z, xAngle, yAngle, zAngle):
+            self.vpX = x
+            self.x = x
+            self.y = y
+            self.z = z
+            self.x_rotate = xAngle
+            self.y_rotate = yAngle
+            self.z_rotate = zAngle
+            
+        #moves camera (note from cameras perspective)
+        def move(self, x_change, y_change, z_change):
+            self.x, self.y, self.z = draw_engine.ThreeDPoint(self.x+x_change,self.y+y_change,self.z+z_change).get_rotated(self.x_rotate, self.y_rotate, self.z_rotate, self.x, self.y, self.z)
+            
+            
+        def turn(self, x_change, y_change, z_change):
+            self.x_rotate += x_change
+            self.y_rotate += y_change
+            self.z_rotate += z_change
+            
+    
     def __init__(self, fl, vpX, vpY, cam):
         self.focalLength = fl
         self.vanishingPointX, self.vanishingPointY = vpX, vpY
         self.camera = cam 
-        
+    
+    #3D Point - enmutable
     class ThreeDPoint:
         def __init__(self,x,y,z):
             self.x = x
@@ -27,41 +52,54 @@ class DrawEngine:
                 return self.y
             if key == 2:
                 return self.z
+            
+        #helper function <3
+        #not sure where to put this - in 3D point I guess
+        def get_rotated(self,angle_x,angle_y,angle_z,center_x,center_y,center_z):
+            
+            x = self.x
+            y = self.y
+            z = self.z
+        
+            cos_x = math.cos(angle_x)
+            sin_x = math.sin(angle_x)
+            cos_y = math.cos(angle_y)
+            sin_y = math.sin(angle_y)
+            cos_z = math.cos(angle_z)
+            sin_z = math.sin(angle_z)
+            
+            y = (y - center_y) * cos_x - (z - center_z) * sin_x + center_y
+            z = (z - center_z) * cos_x + (y - center_y) * sin_x + center_z
+            
+            x = (x - center_x) * cos_y - (z - center_z) * sin_y + center_x
+            z = (z - center_z) * cos_y + (x - center_x) * sin_y + center_z
+            
+            
+            x = (x - center_x) * cos_z - (y - center_y) * sin_z + center_x
+            y = (y - center_y) * cos_z + (x - center_x) * sin_z + center_y
+            
+            return draw_engine.ThreeDPoint(x,y,z)
 
-        def transform(self, X_rotate, Y_rotate, Z_rotate):
+
+            #transforms 3D world point to 2D screen cordinates
+        def transform(self, x_rotate = None, y_rotate = None,  z_rotate = None):
             global draw_engine
             
-            # Rotates a certain point, by default, around the vanishing points
-            def rotateX(y, z, angleX, centerY, centerZ):
-                cosX = math.cos(angleX)
-                sinX = math.sin(angleX)
-                y1 = (y - centerY) * cosX - (z - centerZ) * sinX
-                z1 = (z - centerZ) * cosX + (y - centerY) * sinX
-                return y1 + centerY, z1 + centerZ
-
-            def rotateY(x, z, angleY, centerX, centerZ):
-                cosY = math.cos(angleY)
-                sinY = math.sin(angleY)
-                x1 = (x - centerX) * cosY - (z - centerZ) * sinY
-                z1 = (z - centerZ) * cosY + (x - centerX) * sinY
-                return x1 + centerX, z1 + centerZ
-
-            def rotateZ(x, y, angleZ, centerX, centerY):
-                cosZ = math.cos(angleZ)
-                sinZ = math.sin(angleZ)
-                x1 = (x - centerX) * cosZ - (y - centerY) * sinZ
-                y1 = (y - centerY) * cosZ + (x - centerX) * sinZ
-                return x1 + centerX, y1 + centerY
-
+            if x_rotate == None:
+                 x_rotate = draw_engine.camera.x_rotate
+            if y_rotate == None:
+                 y_rotate = draw_engine.camera.y_rotate
+            if z_rotate == None:
+                 z_rotate = draw_engine.camera.z_rotate
+            
             #should rotate around the camera
+            #I dont understand why this works but rotating around this point dosnt
             x = self.x + draw_engine.camera.x
-            y = self.y + draw_engine.camera.y
+            y = self.y + draw_engine.camera.y 
             z = self.z + draw_engine.camera.z
             
-            y,z = rotateX(y, z, X_rotate, 0, -draw_engine.focalLength)
-            x,z = rotateY(x, z, Y_rotate, 0, -draw_engine.focalLength)
-            x,y = rotateZ(x, y, Z_rotate, 0, -draw_engine.focalLength)
-
+            x,y,z = draw_engine.ThreeDPoint(x,y,z).get_rotated(x_rotate, y_rotate, z_rotate, 0, 0, -draw_engine.focalLength)
+            
             scale = abs(draw_engine.focalLength/(draw_engine.focalLength + z))
             newX = draw_engine.vanishingPointX + x * scale
             newY = draw_engine.vanishingPointY + y * scale
@@ -69,12 +107,12 @@ class DrawEngine:
             return draw_engine.TwoDPoint(newX, newY, scale)
             
         def draw(self, canvas):
-            global X_rotate_angle,Y_rotate_angle,Z_rotate_angle
             line_width = 5 #placeholder
             radius = 5
-            xNew, yNew, scale = self.transform(X_rotate_angle, Y_rotate_angle, Z_rotate_angle)
+            xNew, yNew, scale = self.transform(draw_engine.camera.X_rotate, draw_engine.camera.Y_rotate, draw_engine.camera.Z_rotate)
             canvas.draw_circle((xNew, yNew), radius * scale, line_width, 'White','Grey')
     
+    #unmutable
     class TwoDPoint:
         def __init__(self,x,y,scale):
             self.x = x
@@ -105,47 +143,48 @@ class DrawEngine:
             return 1
 
         def draw(self, canvas):
-            global X_rotate_angle,Y_rotate_angle,Z_rotate_angle
-            x1, y1, z1 = self.a.transform(X_rotate_angle, Y_rotate_angle, Z_rotate_angle)
-            x2, y2, z2 = self.b.transform(X_rotate_angle, Y_rotate_angle, Z_rotate_angle)
-            x3, y3, z3 = self.c.transform(X_rotate_angle, Y_rotate_angle, Z_rotate_angle)
-            x4, y4, z4 = self.d.transform(X_rotate_angle, Y_rotate_angle, Z_rotate_angle)
+            x1, y1, z1 = self.a.transform()
+            x2, y2, z2 = self.b.transform()
+            x3, y3, z3 = self.c.transform()
+            x4, y4, z4 = self.d.transform()
 
             self.priority = (z1+z2+z3+z4)/2
-
+            line_thinkness = min(z1+z2+z3+z4, 10)
+            
+            #need to figure out the glitch
+            #if(self.priority < 0):
+            #    print self.priority
+            
             canvas.draw_polygon( [(x1, y1), 
-                             (x2, y2), 
-                             (x3, y3), 
-                             (x4, y4)], 2, 'White','Grey')
+                                      (x2, y2), 
+                                      (x3, y3), 
+                                      (x4, y4)], line_thinkness, 'White','Grey')
 
 WIDTH = 1200
 HEIGHT = 400
 
-draw_engine = DrawEngine(250.0, WIDTH/2, HEIGHT/2, DrawEngine.ThreeDPoint(0,0,0))
+draw_engine = DrawEngine(500.0, WIDTH/2, HEIGHT/2, DrawEngine.Camera(0,0,-501,0,0,0))
         
-
+l = 100
     
-X_rotate_angle = 0
-Y_rotate_angle = 0
-Z_rotate_angle = 0
+a = draw_engine.ThreeDPoint(0, 0, 0)
+b = draw_engine.ThreeDPoint(0, l, 0)
+c = draw_engine.ThreeDPoint(l, l, 0)
+d = draw_engine.ThreeDPoint(l, 0, 0)
+e = draw_engine.ThreeDPoint(0, 0, l)
+f = draw_engine.ThreeDPoint(0, l, l)
+g = draw_engine.ThreeDPoint(l, l, l)
+h = draw_engine.ThreeDPoint(l, 0, l)
+
 
 stuff = list()
-stuff.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(-WIDTH/4, -HEIGHT/4, 10), 
-                        draw_engine.ThreeDPoint(WIDTH/4, -HEIGHT/4, 10), 
-                        draw_engine.ThreeDPoint( WIDTH/4, HEIGHT/4, 10), 
-                        draw_engine.ThreeDPoint(-WIDTH/4, HEIGHT/4, 10)))
-stuff.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(-WIDTH/4, -HEIGHT/4, 100), 
-                        draw_engine.ThreeDPoint(WIDTH/4, -HEIGHT/4, 100), 
-                        draw_engine.ThreeDPoint( WIDTH/4, HEIGHT/4, 100), 
-                        draw_engine.ThreeDPoint(-WIDTH/4, HEIGHT/4, 100)))
-stuff.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(-WIDTH/14, -HEIGHT/4, 100), 
-                        draw_engine.ThreeDPoint(-WIDTH/14, -HEIGHT/4, 0), 
-                        draw_engine.ThreeDPoint(-WIDTH/14, HEIGHT/4, 0), 
-                        draw_engine.ThreeDPoint( -WIDTH/14, HEIGHT/4, 100)))
-stuff.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint( WIDTH/14, -HEIGHT/4, 100), 
-                        draw_engine.ThreeDPoint(WIDTH/14, -HEIGHT/4, 0), 
-                        draw_engine.ThreeDPoint( WIDTH/14, HEIGHT/4, 0), 
-                        draw_engine.ThreeDPoint( WIDTH/14, HEIGHT/4, 100)))
+
+stuff.append(draw_engine.ThreeDQuad(a, b, c, d))
+stuff.append(draw_engine.ThreeDQuad(c, b, f, g))
+stuff.append(draw_engine.ThreeDQuad(b, f, e, a))
+stuff.append(draw_engine.ThreeDQuad(a, e, h, d))
+stuff.append(draw_engine.ThreeDQuad(d, h, g, c))
+stuff.append(draw_engine.ThreeDQuad(h, g, f, e))
 
 def render_field(canvas):
     global stuff
@@ -159,17 +198,17 @@ def key_handler(key):
     global Z_rotate_angle, X_rotate_angle, Y_rotate_angle,draw_engine
  
     if key == simplegui.KEY_MAP["up"]:
-        X_rotate_angle += math.pi * 0.075
+        draw_engine.camera.turn(math.pi * 0.025,0,0)
     if key == simplegui.KEY_MAP["down"]:
-        X_rotate_angle -= math.pi * 0.075
+        draw_engine.camera.turn(math.pi * -0.025,0,0)
     if key == simplegui.KEY_MAP["left"]:
-        Y_rotate_angle += math.pi * 0.075
+        draw_engine.camera.turn(0,math.pi * 0.025,0)
     if key == simplegui.KEY_MAP["right"]:
-        Y_rotate_angle -= math.pi * 0.075
+        draw_engine.camera.turn(0,math.pi * -0.025,0)
     if key == simplegui.KEY_MAP["o"]:
-        Z_rotate_angle += math.pi * 0.075
+        draw_engine.camera.turn(0,0,math.pi * 0.025)
     if key == simplegui.KEY_MAP["p"]:
-        Z_rotate_angle -= math.pi * 0.075
+        draw_engine.camera.turn(0,0,math.pi * -0.025)
         
         
         #TODO make camera its own class containing direction
