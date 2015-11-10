@@ -78,7 +78,7 @@ def trimZero(points, axis, axis_n):
             for i in range(0,axis_n):
                 new_point.append(0)
             if axis_n == 3:       
-                new_point[axis-2] = max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2])*max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis])) + min(point_b[axis-2],point_a[axis-2])
+                new_point[axis-2] = (max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2]))*max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis])) + min(point_b[axis-2],point_a[axis-2])
                 new_point[axis-1] = (max(point_a[axis-1],point_b[axis-1])-min(point_b[axis-1],point_a[axis-1]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-1],point_a[axis-1])
                 new_point[axis] = 0
                 return [new_point[0],new_point[1],new_point[2]]
@@ -313,16 +313,16 @@ class WorldPlayer(WorldPoint, WorldAngle):
         self.z_vel -= 3
        
     def jump(self):
-        if self.y == 75:
+        if self.z == 75:
             collide = False
             for item in world_objects:
                 if item != player_a and item != player_b:
-                    if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.z >= item.min_z()-50  and self.z <= item.max_z()+50 :
+                    if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.y >= item.min_y()-50  and self.y <= item.max_y()+50 :
                         collide = True
                         break
             #cases: in air above, on platform, below platform
             if collide: 
-                self.y_vel += 40
+                self.z_vel += 40
        
     def forward(self):
         self.y += 20 * math.sin(self.angle_xy)
@@ -436,8 +436,8 @@ for y in range(0,n):
                                                       WorldPoint(0+x*l, y*l, 0), 
                                                       WorldPoint(l+x*l, y*l, 0)]))
 
-player_a = WorldPlayer(world_objects[0][0][0]-l/2, world_objects[0][0][2]-l/2)
-player_b = WorldPlayer(world_objects[5][0][0]-l/2, world_objects[5][0][2]-l/2)
+player_a = WorldPlayer(world_objects[0][0][0]-l/2, world_objects[0][0][1]-l/2)
+player_b = WorldPlayer(world_objects[5][0][0]-l/2, world_objects[5][0][1]-l/2)
 
 world_objects.append(player_a)
 world_objects.append(player_b)
@@ -457,9 +457,9 @@ def render_frame(canvas):
     canvas.draw_text('RIP', (75, 200), 48, 'Black')
     canvas.draw_text('RIP', (WIDTH/2+100, 200), 48, 'Black')
     
-    if player_b[1] > -1000:
+    if player_b.z > -2000:
         right_camera.draw(canvas,world_objects)
-    if player_a[1] > -1000:
+    if player_a.z > -2000:
         left_camera.draw(canvas,world_objects)
     #canvas.draw_line((WIDTH/2, 100), (WIDTH/2, HEIGHT), 4, 'White')
     #canvas.draw_line((0, 100), (WIDTH, 100), 4, 'White')
@@ -492,7 +492,7 @@ def update_world():
     #right_camera.set_pos(-math.cos(-angle_b)*800-player_b.x, 200-player_b.y, -math.sin(-angle_b)*800-player_b.z)
     
     left_camera.set_pos(player_a.x, -300+player_a.y, 300+player_a.z)
-    #right_camera.set_pos(player_b.x, -300+player_b.y, 300+player_b.z)
+    right_camera.set_pos(player_b.x, -300+player_b.y, 300+player_b.z)
     
     
     
@@ -521,38 +521,22 @@ def key_action():
     global draw_engine,keys_down
 
 
-    if keys_down[simplegui.KEY_MAP["up"]]:
-        right_camera.move(0,10,0)
-    if keys_down[simplegui.KEY_MAP["down"]]:
-        right_camera.move(0,-10,0)
-    if keys_down[simplegui.KEY_MAP["left"]]:
-        right_camera.move(-10,0,0)
-    if keys_down[simplegui.KEY_MAP["right"]]:
-        right_camera.move(10,0,0)
-    if keys_down[simplegui.KEY_MAP["o"]]:
-        right_camera.move(0,0,-10)
-    if keys_down[simplegui.KEY_MAP["p"]]:
-        right_camera.move(0,0,10)
-#    if keys_down[simplegui.KEY_MAP["z"]]:
-#        left_camera.turn_angle_y(-.05)
-#    if keys_down[simplegui.KEY_MAP["x"]]:
-#        left_camera.turn_angle_y(0.05)
-    if keys_down[simplegui.KEY_MAP["k"]]:
-        right_camera.turn_angle_xy(-0.05)
-    if keys_down[simplegui.KEY_MAP["l"]]:
-        right_camera.turn_angle_xy(0.05)
-#    if keys_down[simplegui.KEY_MAP["w"]]:
-#        left_camera.move(0,0,-10)
-#    if keys_down[simplegui.KEY_MAP["a"]]:
-#        left_camera.move(-10,0,0)
-#    if keys_down[simplegui.KEY_MAP["s"]]:
-#        left_camera.move(0,0,10)
-#    if keys_down[simplegui.KEY_MAP["d"]]:
-#        left_camera.move(10,0,0)
-#    if keys_down[simplegui.KEY_MAP["q"]]:
-#        left_camera.move(0,-10,0)
-#    if keys_down[simplegui.KEY_MAP["e"]]:
-#        left_camera.move(0,10,0)
+#    if keys_down[simplegui.KEY_MAP["up"]]:
+#        right_camera.move(0,10,0)
+#    if keys_down[simplegui.KEY_MAP["down"]]:
+#        right_camera.move(0,-10,0)
+#    if keys_down[simplegui.KEY_MAP["left"]]:
+#        right_camera.move(-10,0,0)
+#    if keys_down[simplegui.KEY_MAP["right"]]:
+#        right_camera.move(10,0,0)
+#    if keys_down[simplegui.KEY_MAP["o"]]:
+#        right_camera.move(0,0,-10)
+#    if keys_down[simplegui.KEY_MAP["p"]]:
+#        right_camera.move(0,0,10)
+#    if keys_down[simplegui.KEY_MAP["k"]]:
+#        right_camera.turn_angle_xy(-0.05)
+#    if keys_down[simplegui.KEY_MAP["l"]]:
+#        right_camera.turn_angle_xy(0.05)
 
     p1x = player_a[0]
     p1y = player_a[1]
@@ -561,14 +545,14 @@ def key_action():
     
     player_b.set_angle_xy(math.pi/2)
     
-#    if keys_down[simplegui.KEY_MAP["up"]]:
-#        player_b.forward()
-#    if keys_down[simplegui.KEY_MAP["down"]]:
-#        player_b.back()
-#    if keys_down[simplegui.KEY_MAP["left"]]:
-#        player_b.left()
-#    if keys_down[simplegui.KEY_MAP["right"]]:
-#        player_b.right()
+    if keys_down[simplegui.KEY_MAP["up"]]:
+        player_b.forward()
+    if keys_down[simplegui.KEY_MAP["down"]]:
+        player_b.back()
+    if keys_down[simplegui.KEY_MAP["left"]]:
+        player_b.left()
+    if keys_down[simplegui.KEY_MAP["right"]]:
+        player_b.right()
         
     if keys_down[16]:
         player_b.jump()
