@@ -228,7 +228,7 @@ class DrawEngine:
             if self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0:
                 if self.z1 < 0 or self.z2 < 0 or self.z3 < 0 or self.z4 < 0:
                     
-                    print "In + " + str(points)
+                    #print "In + " + str(points)
                     
                     i = 0
                     
@@ -238,29 +238,35 @@ class DrawEngine:
                         
                     while points[i][2] > 0:
                         i = (i+1)%len(points)
-                    point_a = ( (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))* abs(points[i][0]-points[i-1][0] + min(points[i][0],points[i-1][0])), 
-                               (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))*  abs(points[i][1]-points[i-1][1] + min(points[i][1],points[i-1][1])),0)
+                    point_a = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(abs(points[i][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
+                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(abs(points[i][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
+                    #point_a = ( (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))* abs(points[i][0]-points[i-1][0] + min(points[i][0],points[i-1][0])), 
+                    #           (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))*  abs(points[i][1]-points[i-1][1] + min(points[i][1],points[i-1][1])),0)
+                    
                     cut_start = i
                     while points[i][2] < 0:
                         i = (i+1)%len(points)
-                    point_b = ( (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))*   abs(points[i][0]-points[i-1][0] + min(points[i][0],points[i-1][0])), 
-                               (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))*    abs(points[i][1]-points[i-1][1] + min(points[i][1],points[i-1][1])),0)
+                    point_b = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(abs(points[i][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
+                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(abs(points[i][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
                     cut_end = i
+                    
                     if cut_start > cut_end:
                         for  i in range(cut_start,len(points)):
                             points.pop(cut_start)
                         for  i in range(0,cut_end):
                             points.pop(0)
+                        points.insert(cut_start,point_a)
+                        points.insert(cut_start,point_b)
                     else:
                         for  i in range(cut_start,cut_end):
                             points.pop(cut_start)
+                        points.insert(cut_start,point_b)
+                        points.insert(cut_start,point_a)
                             
-                    points.insert(cut_start,point_b)
-                    points.insert(cut_start,point_a)
                     
-                    print cut_start
-                    print cut_end
-                    print "Out + " + str(points)
+                    #print cut_start
+                    #print cut_end
+                    #print "Out + " + str(points)
 
                 new = []
                 for point in points:
@@ -328,7 +334,7 @@ def make_maze(w = 16, h = 8):
     return rtr
 ##End maze gen magic
  
-n = 4 #maze size nxn
+n = 1 #maze size nxn
 
 maze = make_maze(n,n)
 print maze
@@ -348,7 +354,7 @@ for y in range(0,n):
         render_list.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(l+x*l, l, l+y*l),
                                                   draw_engine.ThreeDPoint(0+x*l, l, l+y*l),
                                                   draw_engine.ThreeDPoint(0+x*l, l, 0+y*l), 
-                                                  draw_engine.ThreeDPoint(l+x*l, l, 0+y*l))) #bottem
+                                                  draw_engine.ThreeDPoint(l+x*l, l, 0+y*l))) #top
 
 #horizontal tiles ( --- in 2D version)
 for row in range(0,n+1):
