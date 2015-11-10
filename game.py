@@ -16,23 +16,8 @@ def trimZero(points, axis, axis_n):
             new_point = []
             for i in range(0,axis_n):
                 new_point.append(0)
-            if axis_n == 3:
-                #print axis
-                q= point_a[axis-2]
-                w= point_b[axis-2]
-                print type(q)
-                print type(w)
-                print max #MAX IS A VARIABLE
-                print max([float(w),float(q)])
-                print "!"
-                a = max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2])
-                print a
-                b = max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis]))
-                print b
-                c = min(point_b[axis-2],point_a[axis-2])
-                print c
-                
-                new_point[axis-2] = a*b + c
+            if axis_n == 3:                
+                new_point[axis-2] = max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2])*max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis])) + min(point_b[axis-2],point_a[axis-2])
                 new_point[axis-1] = (max(point_a[axis-1],point_b[axis-1])-min(point_b[axis-1],point_a[axis-1]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-1],point_a[axis-1])
                 new_point[axis] = 0
                 return [new_point[0],new_point[1],new_point[2]]
@@ -43,15 +28,15 @@ def trimZero(points, axis, axis_n):
         
         backface_start = backface(points[0][0],points[0][1],points[1][0],points[1][1],points[2][0],points[2][1])
 
-        min = 1000000000000
-        max = -1000000000000
+        min_num = 1000000000000
+        max_num = -1000000000000
         for point in points:
-            if point[axis] < min:
-                min = point[axis]
-            if point[axis] > max:
-                max = point[axis]
+            if point[axis] < min_num:
+                min_num = point[axis]
+            if point[axis] > max_num:
+                max_num = point[axis]
                 
-        if min < 0 and max > 0:
+        if min_num < 0 and max_num > 0:
             i = 0
             while points[i][axis] <= 0:
                 i = (i+1)%len(points)
