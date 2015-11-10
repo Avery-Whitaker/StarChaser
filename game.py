@@ -47,27 +47,28 @@ def TD_graphics_quad(canvas, x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4):
     canvas.draw_polygon( [(x1New, y1New), 
                          (x2New, y2New), 
                          (x3New, y3New), 
-                         (x4New, y4New)], 5, 'White','Grey')
+                         (x4New, y4New)], 2, 'White','Grey')
 
     # love.graphics.quad(mode, x1New, y1New, x2New, y2New, x3New, y3New, x4New, y4New)
 
 # Draws a triangle
-def TD_graphics_triangle(mode, bfc, x1, y1, z1, x2, y2, z2, x3, y3, z3):
+def TD_graphics_triangle(canvas, bfc, x1, y1, z1, x2, y2, z2, x3, y3, z3):
     global focalLength,vanishingPointX,vanishingPointY
     x1New, y1New = love3D.calculatePointPosition(x1, y1, z1)
     x2New, y2New = love3D.calculatePointPosition(x2, y2, z2)
     x3New, y3New = love3D.calculatePointPosition(x3, y3, z3)
     if bfc and TD_is_back_face(x1New, y1New, x2New, y2New, x3New, y3New):
         return
-    love.graphics.triangle(mode, x1New, y1New, x2New, y2New, x3New, y3New)
+    
+    canvas.draw_polygon([(x1New, y1New), (x2New, y2New), (x3New, y3New)], 12, 'Green')
 
 # Draws a 2D Line segment
-def TD_graphics_lineSegment2D(width, style, x1, y1, z1, x2, y2, z2):
+def TD_graphics_lineSegment2D(canvas, width, x1, y1, z1, x2, y2, z2):
     global focalLength,vanishingPointX,vanishingPointY
     x1New, y1New = love3D.calculatePointPosition(x1, y1, z1)
     x2New, y2New = love3D.calculatePointPosition(x2, y2, z2)
-    love.graphics.setLine(width, style)
-    love.graphics.line(x1New, y1New, x2New, y2New)
+    
+    canvas.draw_line((x1New, y1New), (x2New, y2New), width, 'Red')
 
 # Draws a 2D drawable, isScaling determines whether the drawable will be scaled according to the Z position
 def TD_graphics_draw2D(drawable, x, y, z, r, sx, sy, ox, oy, isScaling):
@@ -112,7 +113,7 @@ def TD_func_checkDistCollision(ax, ay, az, ar, bx, by, bz, br):
     dx = bx - ax
     dy = by - ay
     dz = bz - az
-    dist = math.sqrt(dx^2 + dy^2 + dz^2)
+    dist = math.sqrt(dx**2 + dy**2 + dz**2)
     return dist < ar + br
 
 # Finds the average Z
@@ -173,14 +174,25 @@ HEIGHT = 200
 x = 10
 # Handler to draw on canvas
 def render_field(canvas):
-    global x
+    global x, WIDTH, HEIGHT
     
-    TD_graphics_quad(canvas, 0, 0, -5, WIDTH, 0, -5, WIDTH, HEIGHT, 10, 0, HEIGHT, 10)
+    a = (0,0,0)
+    b = (0,0,0)
+    c =  (0,0,0)
+    d =  (0,0,0)
+    e =  (0,0,0)
+    f =  (0,0,0)
+    
+    TD_graphics_quad(canvas, -WIDTH/2, -HEIGHT/2, 100, 
+                            -WIDTH/2, -HEIGHT/2, 0, 
+                            -WIDTH/2, HEIGHT/2, 0, 
+                            -WIDTH/2, HEIGHT/2, 100)
+  # TD_graphics_quad(canvas, 0, 0, -5, WIDTH, 0, -5, WIDTH, HEIGHT, 10, 0, HEIGHT, 10)
 
 def game_loop(canvas):
     render_field(canvas)
     
-TD_load(10.0, 150, 100)
+TD_load(250.0, WIDTH/2, HEIGHT/2)
 
 # Create a frame and assign callbacks to event handlers
 frame = simplegui.create_frame("Home", WIDTH, HEIGHT)
