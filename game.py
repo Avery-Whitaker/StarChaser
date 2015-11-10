@@ -31,13 +31,13 @@ class DrawEngine:
             self.z_rotate = zAngle
             
         #moves camera (note from cameras perspective)
-        #! BROKEN WORKING RIGHT NOW TODO
+        #! BROKEN TODO HELP
         def move(self, x_change, y_change, z_change):
-            x_change, y_change, z_change = draw_engine.ThreeDPoint(x_change,y_change,z_change).get_rotated(self.x_rotate, self.y_rotate, self.z_rotate, 0,0,0)
-            print x_change, y_change, z_change
-            self.x += x_change
-            self.y += y_change
-            self.z += z_change
+            xc, yc, zc = draw_engine.ThreeDPoint(x_change,y_change,z_change).get_rotated(self.x_rotate, self.y_rotate, self.z_rotate, 0,0,0)
+            #print x_change, y_change, z_change
+            self.x += xc
+            self.y += yc
+            self.z += zc
             
         #TODO Eventualy turning should be relative to self as well
         def turn(self, x_change, y_change, z_change):
@@ -93,16 +93,19 @@ class DrawEngine:
             cos_z = math.cos(angle_z)
             sin_z = math.sin(angle_z)
             
+            #Rotate on x
             old_y = y
-            y = (y - center_y) * cos_x - (z - center_z) * sin_x + center_y
+            y = (y - center_y) * cos_x - (z - center_z) *     sin_x + center_y
             z = (z - center_z) * cos_x + (old_y - center_y) * sin_x + center_z
             
+            #Rotate around x
             old_x = x
-            x = (x - center_x) * cos_y - (z - center_z) * sin_y + center_x
+            x = (x - center_x) * cos_y - (z - center_z) *     sin_y + center_x
             z = (z - center_z) * cos_y + (old_x - center_x) * sin_y + center_z
             
+            #Rotate around z
             old_x = x
-            x = (x - center_x) * cos_z - (y - center_y) * sin_z + center_x
+            x = (x - center_x) * cos_z - (y - center_y) *     sin_z + center_x
             y = (y - center_y) * cos_z + (old_x - center_x) * sin_z + center_y
             
             return draw_engine.ThreeDPoint(x,y,z)
@@ -260,7 +263,7 @@ n = 7 #maze size nxn
 maze = make_maze(n,n)
 print maze
 
-l = 500 #size of each maze peice - sence only thing in world essentaily how fast you move
+l = 300 #size of each maze peice - sence only thing in world essentaily how fast you move
 
 ###Convert 2D maze to 3D Maze
 
@@ -295,6 +298,10 @@ def render_field(canvas):
     render_list.sort()
     
     for thing in render_list:
+        #Speed up by putting conditions here
+        # i. e. if thing far from camera
+        #if thing behind camera
+        #then move things into draw functon itself
         thing.draw(canvas)
           
 #####################################################################
@@ -340,17 +347,17 @@ def key_action():
         draw_engine.camera.turn(0,0,math.pi * -0.025)
         
     if keys_down[simplegui.KEY_MAP["w"]]:
-        draw_engine.camera.move(0,0,10) #should be relative
+        draw_engine.camera.move(0,0,-10) #should be relative
     if keys_down[simplegui.KEY_MAP["a"]]:
-        draw_engine.camera.move(-10,0,0)
-    if keys_down[simplegui.KEY_MAP["s"]]:
-        draw_engine.camera.move(0,0,-10)
-    if keys_down[simplegui.KEY_MAP["d"]]:
         draw_engine.camera.move(10,0,0)
+    if keys_down[simplegui.KEY_MAP["s"]]:
+        draw_engine.camera.move(0,0,10)
+    if keys_down[simplegui.KEY_MAP["d"]]:
+        draw_engine.camera.move(-10,0,0)
     if keys_down[simplegui.KEY_MAP["q"]]:
-        draw_engine.camera.move(0,10,0)
-    if keys_down[simplegui.KEY_MAP["e"]]:
         draw_engine.camera.move(0,-10,0)
+    if keys_down[simplegui.KEY_MAP["e"]]:
+        draw_engine.camera.move(0,10,0)
 
 #######################################################################
 ##### game loop and make frame
