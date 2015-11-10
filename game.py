@@ -212,15 +212,17 @@ class DrawEngine:
                 return DrawEngine.ScreenPoly(points, self.color_r, self.color_g, self.color_b)
             return None
 
+    #class ScreenSprite
+        
     #class ScreenImage:
     #    def __init__(self,x,y,image)
-    #    
-    #            
+    #    	pass
+                
     #    def draw(self, canvas, camera):
-    #         
-    #        #crop so entirly whiten camera
-    #                 
-     #       canvas.draw_image(image, center_source, width_height_source, center_dest, width_height_dest, rotation)
+    #         pass
+            #crop so entirly whiten camera
+                     
+    #       canvas.draw_image(image, center_source, width_height_source, center_dest, width_height_dest, rotation)
         
     class ScreenPoint:
         def __init__(self,x,y,scale):
