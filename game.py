@@ -468,10 +468,6 @@ def update_world():
     player_a.update()
     player_b.update()
     
-    left_camera.set_angle_xy(math.pi/2-WorldAngle.angleBetweenWorldPoints(player_a, player_b))
-    right_camera.set_angle_xy(math.pi/2-WorldAngle.angleBetweenWorldPoints(player_b, player_a))
-    
-    temp_angle = math.pi/2 -WorldAngle.angleBetweenWorldPoints(player_a, player_b)
     
     #lenAB = math.sqrt( (p2x-p1x)**2 + (p2y-p1y)**2 )
     
@@ -492,12 +488,28 @@ def update_world():
     
     #left_camera.set_pos(math.cos(temp_angle)*500+player_a.x, math.sin(temp_angle)*500+player_a.y, 300+player_a.z)
     
+    #player_a.z = 75
+    #player_b.z = 75
+    
+    dx = player_b.x-player_a.x
+    dy = player_b.y-player_a.y
+    l = 600
+    L = math.sqrt( dx**2 + dy**2 )
+    angle_a = WorldAngle.angleBetweenWorldPoints(player_a, player_b)
+    angle_b = WorldAngle.angleBetweenWorldPoints(player_b, player_a)
+    
+    left_camera.set_angle_xy(math.pi/2-WorldAngle.angleBetweenWorldPoints(player_a, player_b))
+    right_camera.set_angle_xy(math.pi/2-WorldAngle.angleBetweenWorldPoints(player_b, player_a))
+    
+    left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 300+player_a.z)
+    right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 300+player_b.z)
+    
+    #left_camera.set_pos(player_a.x, player_a.y, 300+player_a.z)
+    #right_camera.set_pos(player_b.x, player_b.y, 300+player_b.z)
     
     
-    left_camera.set_pos(player_a.x, player_a.y, 300+player_a.z)
-    right_camera.set_pos(player_b.x, player_b.y, 300+player_b.z)
-    
-    
+    player_a.set_angle_xy(math.pi/2-angle_a)
+    player_b.set_angle_xy(math.pi/2-angle_b)
 #    
 #    random.shuffle(world_objects)
 #
@@ -521,7 +533,6 @@ def keyup(k):
     keys_down[k] = False
             
 def key_action():    
-    player_b.set_angle_xy(0)
     
     if keys_down[simplegui.KEY_MAP["up"]]:
         player_b.forward()
@@ -535,7 +546,6 @@ def key_action():
     if keys_down[16]:
         player_b.jump()
     
-    player_a.set_angle_xy(0)
     
     if keys_down[simplegui.KEY_MAP["s"]]:
         #player_a.back(math.atan2(p2y - p1y, p2x - p1x))
