@@ -2,8 +2,6 @@ import simplegui
 import math
 import random
 
-POLYS = True
-
 #####################################################################
 #### Class Draw Engine
 # meant to encapsulate all the drawing code
@@ -83,8 +81,7 @@ class DrawEngine:
             if key == 2:
                 return self.z
             
-        # returns rotate form of self
-        #!!! Need to test this function - could be source of bugs
+           
         def get_rotated(self,angle_x,angle_y,angle_z,center_x,center_y,center_z):
             
             x = self.x
@@ -121,9 +118,7 @@ class DrawEngine:
         def transform(self):
             global draw_engine
             
-            x_rotate = draw_engine.camera.x_rotate
             y_rotate = draw_engine.camera.y_rotate
-            z_rotate = draw_engine.camera.z_rotate
             
             #should rotate around the camera
             #?!?!I dont understand why this works but rotating around this point dosnt
@@ -132,7 +127,16 @@ class DrawEngine:
             y = self.y + draw_engine.camera.y 
             z = self.z + draw_engine.camera.z
             
-            x,y,z = draw_engine.ThreeDPoint(x,y,z).get_rotated(x_rotate, y_rotate, z_rotate, 0, 0, -draw_engine.focalLength)
+            
+            
+            cos_y = math.cos(draw_engine.camera.y_rotate)
+            sin_y = math.sin(draw_engine.camera.y_rotate)
+            
+            #Rotate around x
+            old_x = x
+            x = x * cos_y - (z+draw_engine.focalLength)*     sin_y
+            z = (z+draw_engine.focalLength) * cos_y + old_x * sin_y - draw_engine.focalLength
+            
             
             #!? Why dosnt the below line do same as above???
             #x,y,z = draw_engine.ThreeDPoint(self.x,self.y,self.z).get_rotated(x_rotate, y_rotate, z_rotate, draw_engine.camera.x, draw_engine.camera.y , draw_engine.camera.z-draw_engine.focalLength)
@@ -186,9 +190,9 @@ class DrawEngine:
             self.d = d
             self.priority = None
             
-            self.color_r = random.randrange(40,60)
-            self.color_g = random.randrange(40,60)
-            self.color_b = random.randrange(40,60)
+            self.color_r = random.randrange(70,100)
+            self.color_g = random.randrange(200,255)
+            self.color_b = random.randrange(70,100)
                     
         def pre_render(self):
             self.x1, self.y1, self.z1 = self.a.transform()
@@ -198,23 +202,19 @@ class DrawEngine:
 
             self.priority = (self.z1+self.z2+self.z3+self.z4)/4.0
             
-            #???????? NO idea why this works but it does
             if self.z1 < 0 or self.z2 < 0 or self.z3 < 0 or self.z4 < 0:
                 self.priority = 1000000000000
 
             
         #TODO implment cmp for other renderables so they all can be sorted together
         def __cmp__(self, other):
-            
             if self.priority == None:
                 self.pre_render()
-                
             if self.priority < other.priority:
                 return -1
             elif self.priority == other.priority:
                 return 0
             return 1
-        
 
         def draw(self, canvas):
             global draw_engine
@@ -228,8 +228,8 @@ class DrawEngine:
                        (self.x2, self.y2, self.z2) , 
                        (self.x3, self.y3, self.z3) , 
                        (self.x4, self.y4, self.z4) ]
-            draw = True
             #Trim polygon
+            
             if self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0:
                 if self.z1 < 0 or self.z2 < 0 or self.z3 < 0 or self.z4 < 0:
                     draw = False
@@ -245,84 +245,49 @@ class DrawEngine:
                         
                     while points[i][2] > 0:
                         i = (i+1)%len(points)
-                    #print "(("+str(max(points[i-1][0],points[i][0]))+"-"+str(min(points[i][0],points[i-1][0]))+")*("+str(max(points[i][2],points[i-1][2]))+"/("+str(abs(points[i][2])+abs(points[i-1][2]))+"))+"+str(min(points[i][0],points[i-1][0]))+")"
                     point_a = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
                                ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0) 
                     cut_start = i
                     while points[i][2] < 0:
                         i = (i+1)%len(points)
-                    #print "(("+str(max(points[i-1][0],points[i][0]))+"-"+str(min(points[i][0],points[i-1][0]))+")*("+str(max(points[i][2],points[i-1][2]))+"/("+str(abs(points[i][2])+abs(points[i-1][2]))+"))+"+str(min(points[i][0],points[i-1][0]))+")"
                     point_b = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
                                ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
                     cut_end = i
                     if cut_start > cut_end:
-                        #print "In  + " + str(points)
                         for  i in range(cut_start,len(points)):
                             points.pop(cut_start)
                         for  i in range(0,cut_end):
                             points.pop(0)
                             
-                        #print "Cut + " + str(points)
-                        #points.insert(cut_start,point_a) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11 
-                        #points.insert(cut_start,point_b) #THIS IS THE PROBLEM CASE
                         
                         backface_end = backface(self.x1,self.y1,self.z1,point_a[0],point_a[1],point_a[2],point_b[0],point_b[1],point_b[2])
         
                         if backface_start != backface_end:
                             points.insert(cut_start,point_a) #This is where glitchy things come from
                             points.insert(cut_start,point_b)
-                            draw = True
                         else:
                             points.insert(cut_start,point_b)
                             points.insert(cut_start,point_a)
-                            draw = True
                         
-                        #print "Out + " + str(points)
+                        
                     else:
                         for  i in range(cut_start,cut_end):
                             points.pop(cut_start)
                         points.insert(cut_start,point_b)
                         points.insert(cut_start,point_a)
-                        draw = True
-                            
-                    print ""
-                    #if backface_start == backface_end:
-                    #    points.insert(cut_start,point_b) #good
-                    #    points.insert(cut_start,point_a)
-                    #else:
-                    #fpoints.insert(cut_start,point_b)
-                    #points.insert(cut_start,point_a)
-                    
-                    
-                        
 
                 new = []
                 for point in points:
                     new.append((point[0], point[1]))
                 points = new
 
-                #if self.priority > 0:
-                brightness = 200*self.priority/draw_engine.focalLength
-                #brightness = 5
-                #print brightness
-                if draw and brightness > 0.2:
-
-                    if POLYS:
-                        canvas.draw_polygon( points, line_thinkness, 'rgba(0,0,0,0)',"rgb("+str(max(min(int(self.color_r*brightness),self.color_r),0))+","+str(max(min(int(self.color_g*brightness),self.color_g),0))+","+str(max(min(int(self.color_b*brightness),self.color_b),0))+")")
-                        #                     (self.x4, self.y4)], line_thinkness, 'White',"rgb("+str(self.color_r,255)+","+str(self.color_g)+","+str(self.color_b)+")")
-                    else:
-                        canvas.draw_polygon( points, 5, 'rgba(255,255,255,1)',"rgba(0,0,0,0)")
-
+                canvas.draw_polygon( points, line_thinkness, 'rgba(0,0,0,0)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
+                    
         
             self.priority = None
     # END class 3D Quad
     
     #END draw engine
-    
-###################
-#ISSUES:
-# - Camera angle change wrong
-
 
 
 
@@ -333,120 +298,22 @@ render_list = list()
 WIDTH = 800
 HEIGHT = 800
 
-draw_engine = DrawEngine(500.0, WIDTH/2, HEIGHT/2, DrawEngine.Camera(0,0,0,0,0,0))
-        
-#Maze Gen code from http://rosettacode.org/wiki/Maze_generation#Python
-##Maze gen magic
-def make_maze(w = 16, h = 8):
-    vis = [[0] * w + [1] for _ in range(h)] + [[1] * (w + 1)]
-    ver = [["|  "] * w + ['|'] for _ in range(h)] + [[]]
-    hor = [["+--"] * w + ['+'] for _ in range(h + 1)]
- 
-    def walk(x, y):
-        vis[y][x] = 1
- 
-        d = [(x - 1, y), (x, y + 1), (x + 1, y), (x, y - 1)]
-        random.shuffle(d)
-        for (xx, yy) in d:
-            if vis[yy][xx]: continue
-            if xx == x: hor[max(y, yy)][x] = "+  "
-            if yy == y: ver[y][max(x, xx)] = "   "
-            walk(xx, yy)
- 
-    walk(random.randrange(w), random.randrange(h))
-    
-    #for a in 
-    rtr = ""
-    for (a, b) in zip(hor, ver):
-        rtr += ''.join(a + ['\n'] + b) + '\n'
-    return rtr
-##End maze gen magic
- 
-n = 4 #maze size nxn
+draw_engine = DrawEngine(500.0, WIDTH/2, HEIGHT/2, DrawEngine.Camera(0,0,0,0,0,0)) 
 
-maze = make_maze(n,n)
-print maze
+n = 10 #maze size nxn
 
 l = 300 #size of each maze peice - sence only thing in world essentaily how fast you move
-
 ###Convert 2D maze to 3D Maze
 
 #Bottom Tiles
 #could be one big tile but then would render over stuff sometimes
 for y in range(0,n):
     for x in range(0,n):
-        render_list.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(l+x*l, 0, l+y*l),
-                                                  draw_engine.ThreeDPoint(0+x*l, 0, l+y*l),
-                                                  draw_engine.ThreeDPoint(0+x*l, 0, 0+y*l), 
-                                                  draw_engine.ThreeDPoint(l+x*l, 0, 0+y*l))) #bottem
-        render_list.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(l+x*l, l, l+y*l),
-                                                  draw_engine.ThreeDPoint(0+x*l, l, l+y*l),
-                                                  draw_engine.ThreeDPoint(0+x*l, l, 0+y*l), 
-                                                  draw_engine.ThreeDPoint(l+x*l, l, 0+y*l))) #top
-
-#horizontal tiles ( --- in 2D version)
-for row in range(0,n+1):
-    for x in range(0,n):
-        if row == 0 or row == n or maze[2*row*(n*3+2)+3*x + 1] == '-':
-            render_list.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(x*l, l, row*l), 
-                                                      draw_engine.ThreeDPoint((x+1)*l, l, row*l), 
-                                                      draw_engine.ThreeDPoint((x+1)*l, 0, row*l), 
-                                                      draw_engine.ThreeDPoint(x*l, 0, row*l)))
-#verticle tiles ( | in 2D version )     
-for col in range(0,n+1):
-    for y in range(0,n):
-        if col == 0 or col == n or maze[(2*y+1)*(n*3+2)+3*col] == '|':
-            render_list.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(col*l, l, y*l), 
-                                                      draw_engine.ThreeDPoint(col*l, l, (y+1)*l), 
-                                                      draw_engine.ThreeDPoint(col*l, 0, (1+y)*l), 
-                                                      draw_engine.ThreeDPoint(col*l, 0, y*l)))
-### Rendering function   
-
-#Adapted from http://np6.nfshost.com/tech/coding/python/inversecircle/
-def flashlgight_effect(canvas, color, center, radius, n):
-    global HEIGHT, WIDTH
-    left = center[0] - radius
-    right = center[0] + radius
-    top = center[1] - radius
-    bottom = center[1] + radius
-    screen_width = WIDTH
-    screen_height = HEIGHT
-
-    canvas.draw_polygon([[0, 0],         [left, 0],      [left, screen_height],  [0, screen_height]], 1, 'rgba(0,0,0,0', color)
-    canvas.draw_polygon([[right, 0],     [screen_width, 0],     [screen_width, screen_height], [right, screen_height]], 1, 'rgba(0,0,0,0', color)
-    canvas.draw_polygon([[left, 0],      [right, 0],      [right, top],  [left, top]], 1, 'rgba(0,0,0,0', color)
-    canvas.draw_polygon([ [left, bottom], [right, bottom], [right, screen_height],  [left, screen_height] ], 1, 'rgba(0,0,0,0', color)
-
-    #fill in the corners with pretty roundness
-
-    # list of numbers, 0 through n - 1
-    points = range(n) 
-
-    # list of n numbers evenly distributed from 0 to 1.0 inclusive
-    points = map(lambda pt: pt / (len(points) - 1.0), points) 
-
-    # list of n radians evenly distributed from 0 to pi/4 inclusive
-    points = map(lambda pt: pt * 3.1415926535 * 2 / 4, points) 
-
-    # list of points evenly distributed around the circumference in the first quadrant of a unit circle
-    points = map(lambda pt: (math.cos(pt), math.sin(pt)), points) 
-
-    # list of points evenly distributed around the circumference of the circle of desired size centered on the origin
-    points = map(lambda pt: (radius * pt[0], radius * pt[1]), points) 
-
-    # we'll draw these points with trapezoids that connect to the 
-    # top or bottom rectangle and flip them around each quadrant
-    for quadrant in ((1, 1), (-1, 1), (-1, -1), (1, -1)): 
-        x_flip = quadrant[0]
-        y_flip = quadrant[1]
-        edge = center[1] + radius * y_flip
-        for i in xrange(len(points) - 1):
-            A = (points[i][0] * x_flip + center[0], points[i][1] * y_flip + center[1])
-            B = (points[i + 1][0] * x_flip + center[0], points[i + 1][1] * y_flip + center[1])
-            A_edge = (A[0], edge)
-            B_edge = (B[0], edge)
-
-            canvas.draw_polygon((A,B,B_edge,A_edge), 1, 'rgba(0,0,0,0)',color)
+        if random.random() > 0.3:
+            render_list.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(l+x*l, 0, l+y*l),
+                                                      draw_engine.ThreeDPoint(0+x*l, 0, l+y*l),
+                                                      draw_engine.ThreeDPoint(0+x*l, 0, 0+y*l), 
+                                                      draw_engine.ThreeDPoint(l+x*l, 0, 0+y*l))) #bottem  
 
 def render_field(canvas):
     global render_list, a_change, a,keys_down
@@ -459,13 +326,8 @@ def render_field(canvas):
         #if thing behind camera
         #then move things into draw functon itself
         thing.draw(canvas)
+
         
-    #for i in range(10,40):
-    #    flashlgight_effect(canvas, 'rgba(0,0,0,'+str(0.3*i/20)+')', (WIDTH/2, HEIGHT/2),WIDTH/10+WIDTH*i*0.03, 6)
-
-    #flashlgight_effect(canvas, 'rgba(0,0,0,0.3)', (WIDTH/2, HEIGHT/2),WIDTH/7, 10)
-
-
 #####################################################################
 #### Key handler stuff for testing
     
