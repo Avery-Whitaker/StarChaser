@@ -197,6 +197,10 @@ class DrawEngine:
             self.x4, self.y4, self.z4 = self.d.transform()
 
             self.priority = (self.z1+self.z2+self.z3+self.z4)/4.0
+            
+            #???????? NO idea why this works but it does
+            if self.z1 < 0 or self.z2 < 0 or self.z3 < 0 or self.z4 < 0:
+                self.priority = 1000000000000
 
             
         #TODO implment cmp for other renderables so they all can be sorted together
@@ -227,29 +231,22 @@ class DrawEngine:
             #Trim polygon
             if self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0:
                 if self.z1 < 0 or self.z2 < 0 or self.z3 < 0 or self.z4 < 0:
-                    
                     #print "In + " + str(points)
-                    
                     i = 0
-                    
-                    
+                    backface = points[1][0] < points[0][0] #WRONG TODO FIX BACKFACE FGUCNTION
                     while points[i][2] < 0:
                         i = (i+1)%len(points)
                         
                     while points[i][2] > 0:
                         i = (i+1)%len(points)
                     point_a = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(abs(points[i][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
-                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(abs(points[i][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
-                    #point_a = ( (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))* abs(points[i][0]-points[i-1][0] + min(points[i][0],points[i-1][0])), 
-                    #           (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))*  abs(points[i][1]-points[i-1][1] + min(points[i][1],points[i-1][1])),0)
-                    
+                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(abs(points[i][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0) 
                     cut_start = i
                     while points[i][2] < 0:
                         i = (i+1)%len(points)
                     point_b = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(abs(points[i][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
                                ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(abs(points[i][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
                     cut_end = i
-                    
                     if cut_start > cut_end:
                         for  i in range(cut_start,len(points)):
                             points.pop(cut_start)
@@ -260,12 +257,23 @@ class DrawEngine:
                     else:
                         for  i in range(cut_start,cut_end):
                             points.pop(cut_start)
-                        points.insert(cut_start,point_b)
-                        points.insert(cut_start,point_a)
-                            
                     
-                    #print cut_start
-                    #print cut_end
+                    if backface:
+                        if point_b[0] > point_a[0]:
+                            points.insert(cut_start,point_a)
+                            points.insert(cut_start,point_b)
+                        else:
+                            points.insert(cut_start,point_b)
+                            points.insert(cut_start,point_a)
+                    else:
+                        if point_b[0] > point_a[0]:
+                            points.insert(cut_start,point_a)
+                            points.insert(cut_start,point_b)
+                        else:
+                            points.insert(cut_start,point_b)
+                            points.insert(cut_start,point_a)
+                        
+                        
                     #print "Out + " + str(points)
 
                 new = []
@@ -334,7 +342,7 @@ def make_maze(w = 16, h = 8):
     return rtr
 ##End maze gen magic
  
-n = 1 #maze size nxn
+n = 3 #maze size nxn
 
 maze = make_maze(n,n)
 print maze
