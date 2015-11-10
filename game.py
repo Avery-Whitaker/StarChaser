@@ -147,7 +147,7 @@ class DrawEngine:
             x4, y4, z4 = self.d.transform()
 
             self.priority = (z1+z2+z3+z4)/2
-            line_thinkness = min(z1+z2+z3+z4, 10)
+            line_thinkness = 1 # min(z1+z2+z3+z4, 10)
             
             #need to figure out this
             #if plane intersects veiwplane: oh no!
@@ -194,7 +194,7 @@ def make_maze(w = 16, h = 8):
         rtr += ''.join(a + ['\n'] + b) + '\n'
     return rtr
  
-n = 3
+n = 10
 maze = make_maze(n,n)
 
 print maze
@@ -209,15 +209,27 @@ for y in range(0,n):
     
         render_list.append(draw_engine.ThreeDQuad(a, b, c, d)) #bottem
         
-for row in range(0,n):
-    for x in range(0,n-1):
-        c = draw_engine.ThreeDPoint(x*l, l, row*l)
-        g = draw_engine.ThreeDPoint((x+1)*l, l, row*l)
+for row in range(0,n+1):
+    for x in range(0,n):
+        a = draw_engine.ThreeDPoint(x*l, l, row*l)
+        b = draw_engine.ThreeDPoint((x+1)*l, l, row*l)
         
-        d = draw_engine.ThreeDPoint((x+1)*l, 0, row*l)
-        h = draw_engine.ThreeDPoint(x*l, 0, row*l)
+        c = draw_engine.ThreeDPoint((x+1)*l, 0, row*l)
+        d = draw_engine.ThreeDPoint(x*l, 0, row*l)
         
-        if row == 0 or row == n-1 or maze[2*row*(n*3+2)+3*x + 1] == '-':
+        if row == 0 or row == n or maze[2*row*(n*3+2)+3*x + 1] == '-':
+            render_list.append(draw_engine.ThreeDQuad(a, b, c, d))
+      
+for col in range(0,n+1):
+    for y in range(0,n):
+                                # x constant, 2 ys = l 2 ys = 0 z 
+        a = draw_engine.ThreeDPoint(col*l, l, y*l)
+        b = draw_engine.ThreeDPoint(col*l, l, (y+1)*l)
+        
+        c = draw_engine.ThreeDPoint(col*l, 0, (1+y)*l)
+        d = draw_engine.ThreeDPoint(col*l, 0, y*l)
+        
+        if col == 0 or col == n or maze[(2*y+1)*(n*3+2)+3*col] == '|':
             render_list.append(draw_engine.ThreeDQuad(a, b, c, d))
         
         
