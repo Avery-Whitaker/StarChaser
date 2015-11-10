@@ -81,8 +81,8 @@ def trimZero(points, axis, axis_n):
             points.insert(cut_start,point_a)
             
             if not check_convexity(points):
-                points.pop(cut_start-1)
-                points.pop(cut_start-1)
+                points.remove(point_a)
+                points.remove(point_b)
                 points.insert(cut_start,point_a)
                 points.insert(cut_start,point_b)
                 
@@ -111,6 +111,8 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
 
 class DrawEngine:
 
+    
+    
     class Camera:
         def draw(self, canvas):
             
@@ -149,11 +151,17 @@ class DrawEngine:
         def turn(self, y_change):
             self.y_rotate += y_change
     
+    
     class WorldPoint:
         def __init__(self,x,y,z):
             self.x = x
             self.y = y
             self.z = z
+            
+        def move(self,a,b,c):
+            self.x += a
+            self.y += b
+            self.z += c
             
         def __getitem__(self,key):
             if key == 0:
@@ -179,12 +187,48 @@ class DrawEngine:
             return DrawEngine.ScreenPoint(
                 camera.vanishingPointX + x * abs(scale), 
                 camera.vanishingPointY + y * abs(scale), scale)
-    
+        
+    class WorldPoly:
+        def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
+            self.points = points
+            self.color_r = color_r
+            self.color_g = color_g
+            self.color_b = color_b
+
+        def transform(self, camera):
+            line_thinkness = 1
+            points = []
+            maxZ = -1000000000
+            minZ = 10000000000
+            for point in self.points:
+                points.append( point.transform(camera) )
+                if points[len(points)-1][2] > maxZ:
+                    maxZ = points[len(points)-1][2]
+                if points[len(points)-1][2] < maxZ:
+                    minZ = points[len(points)-1][2]
+            if maxZ > 0:
+                if minZ < 0:
+                    trimZero(points, 2, 3)
+                return DrawEngine.ScreenPoly(points, self.color_r, self.color_g, self.color_b)
+            return None
+
+    #class ScreenImage:
+    #    def __init__(self,x,y,image)
+    #    
+    #            
+    #    def draw(self, canvas, camera):
+    #         
+    #        #crop so entirly whiten camera
+    #                 
+     #       canvas.draw_image(image, center_source, width_height_source, center_dest, width_height_dest, rotation)
+        
     class ScreenPoint:
         def __init__(self,x,y,scale):
             self.x = x
             self.y = y
             self.scale = scale
+            
+            self.priority = scale
 
         def __getitem__(self,key):
             if key == 0:
@@ -193,6 +237,20 @@ class DrawEngine:
                 return self.y
             if key == 2:
                 return self.scale
+            
+        def __cmp__(self, other):
+            if self.priority < other.priority:
+                return -1
+            elif self.priority == other.priority:
+                return 0
+            return 1
+            
+        def draw(self, canvas, camera):
+            line_width = 5
+            radius = 15
+            if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
+                canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), radius * self.scale, line_width, 'White','Grey')
+    
             
     class ScreenPoly:
         def __init__(self, points, color_r, color_g, color_b):
@@ -237,30 +295,6 @@ class DrawEngine:
                 polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
                 canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
 
-    class WorldPoly:
-        def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
-            self.points = points
-            self.color_r = color_r
-            self.color_g = color_g
-            self.color_b = color_b
-
-        def transform(self, camera):
-            line_thinkness = 1
-            points = []
-            maxZ = -1000000000
-            minZ = 10000000000
-            for point in self.points:
-                points.append( point.transform(camera) )
-                if points[len(points)-1][2] > maxZ:
-                    maxZ = points[len(points)-1][2]
-                if points[len(points)-1][2] < maxZ:
-                    minZ = points[len(points)-1][2]
-            if maxZ > 0:
-                if minZ < 0:
-                    trimZero(points, 2, 3)
-                return DrawEngine.ScreenPoly(points, self.color_r, self.color_g, self.color_b)
-            return None
-
 world_objects = []
 n = 12
 l = 300 
@@ -272,6 +306,12 @@ for y in range(0,n):
                                                       DrawEngine.WorldPoint(0+x*l, 0, l+y*l),
                                                       DrawEngine.WorldPoint(0+x*l, 0, 0+y*l), 
                                                       DrawEngine.WorldPoint(l+x*l, 0, 0+y*l)]))
+
+test_point = DrawEngine.WorldPoint(200, 0, 200)
+
+world_objects.append(test_point)
+
+            
 WIDTH = 1200
 HEIGHT = 600
 #                            (self, x, y, z, yAngle, world_objects, screen_x, screen_y, screen_width, screen_height)
@@ -280,33 +320,47 @@ right_camera = DrawEngine.Camera(-200,200,-200,  0, world_objects ,WIDTH/2+50 , 
   
                 
 def render_field(canvas):
-    canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Blue')
+    canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Cyan')
     right_camera.draw(canvas)
     left_camera.draw(canvas)
     #canvas.draw_line((WIDTH/2, 100), (WIDTH/2, HEIGHT), 4, 'White')
     #canvas.draw_line((0, 100), (WIDTH, 100), 4, 'White')
-    canvas.draw_text('Avery Whitaker | Split-Screen Multiplayer Prototype V0.1', (30, 50), 48, 'Red')
+    canvas.draw_text('Avery Whitaker | Split-Screen Multiplayer Prototype V0.2', (30, 50), 48, 'Red')
         
 #####################################################################
 #### Key handler stuff for testing
     
 keys_down = {
-    simplegui.KEY_MAP['z']: False,
-    simplegui.KEY_MAP['x']: False,
+    simplegui.KEY_MAP['a']: False,
+    simplegui.KEY_MAP['b']: False,
+    simplegui.KEY_MAP['c']: False,
+    simplegui.KEY_MAP['d']: False,
+    simplegui.KEY_MAP['e']: False,
+    simplegui.KEY_MAP['f']: False,
+    simplegui.KEY_MAP['g']: False,
+    simplegui.KEY_MAP['h']: False,
+    simplegui.KEY_MAP['i']: False,
+    simplegui.KEY_MAP['j']: False,
     simplegui.KEY_MAP['k']: False,
     simplegui.KEY_MAP['l']: False,
+    simplegui.KEY_MAP['m']: False,
+    simplegui.KEY_MAP['n']: False,
+    simplegui.KEY_MAP['o']: False,
+    simplegui.KEY_MAP['p']: False,
+    simplegui.KEY_MAP['q']: False,
+    simplegui.KEY_MAP['r']: False,
+    simplegui.KEY_MAP['s']: False,
+    simplegui.KEY_MAP['t']: False,
+    simplegui.KEY_MAP['u']: False, #MAKE THIS A LOOP IDIOT
+    simplegui.KEY_MAP['v']: False,
+    simplegui.KEY_MAP['w']: False,
+    simplegui.KEY_MAP['x']: False,
+    simplegui.KEY_MAP['y']: False,
+    simplegui.KEY_MAP['z']: False,
     simplegui.KEY_MAP['up']: False,
     simplegui.KEY_MAP['down']: False,
     simplegui.KEY_MAP['left']: False,
-    simplegui.KEY_MAP['right']: False,
-    simplegui.KEY_MAP['o']: False,
-    simplegui.KEY_MAP['p']: False,
-    simplegui.KEY_MAP['w']: False,
-    simplegui.KEY_MAP['a']: False,
-    simplegui.KEY_MAP['s']: False,
-    simplegui.KEY_MAP['d']: False,
-    simplegui.KEY_MAP['q']: False,
-    simplegui.KEY_MAP['e']: False
+    simplegui.KEY_MAP['right']: False
 }
     
 def set_keydown_handler(k):
@@ -352,6 +406,20 @@ def key_action():
         left_camera.move(0,-10,0)
     if keys_down[simplegui.KEY_MAP["e"]]:
         left_camera.move(0,10,0)
+        
+        
+    if keys_down[simplegui.KEY_MAP["t"]]:
+        test_point.move(0,-10,0)
+    if keys_down[simplegui.KEY_MAP["g"]]:
+        test_point.move(0,10,0)
+    if keys_down[simplegui.KEY_MAP["f"]]:
+        test_point.move(10,0,0)
+    if keys_down[simplegui.KEY_MAP["h"]]:
+        test_point.move(-10,0,0)
+    if keys_down[simplegui.KEY_MAP["r"]]:
+        test_point.move(0,0,-10)
+    if keys_down[simplegui.KEY_MAP["y"]]:
+        test_point.move(0,0,10)
 
 
 def game_loop(canvas):
