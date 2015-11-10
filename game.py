@@ -31,19 +31,22 @@ class DrawEngine:
             self.z_rotate = zAngle
             
         #moves camera (note from cameras perspective)
-        #! BROKEN TODO HELP
         def move(self, x_change, y_change, z_change):
+                                                                                                                      #WHY????
             xc, yc, zc = draw_engine.ThreeDPoint(x_change,y_change,z_change).get_rotated(self.x_rotate, self.y_rotate, math.pi-self.z_rotate, 0,0,0)
-            #print x_change, y_change, z_change
             self.x += xc
             self.y += yc
             self.z += zc
             
         #TODO Eventualy turning should be relative to self as well
         def turn(self, x_change, y_change, z_change):
-            self.x_rotate += x_change
-            self.y_rotate += y_change
-            self.z_rotate += z_change
+            xc, yc, zc = draw_engine.ThreeDPoint(x_change,y_change,z_change).get_rotated(self.x_rotate, self.y_rotate, self.z_rotate, 0,0,0)
+            
+            print xc, yc, zc
+           
+            self.x_rotate += xc
+            self.y_rotate += yc
+            self.z_rotate += zc
     #End Camera Class
     
     #Draw Engine init
@@ -236,8 +239,7 @@ class DrawEngine:
     
 ###################
 #ISSUES:
-# - When looking at things backwords ( i. e. in more negative z then object looking direction negative z)
-#       objects are malformed
+# - Camera angle change wrong
 
 
 
