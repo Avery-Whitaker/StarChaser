@@ -2,77 +2,52 @@ import simplegui
 import math
 import random
 
-#####################################################################
-#### Class Draw Engine
-# meant to encapsulate all the drawing code
-# It would be preferable to have this in a seperate file and import
-# it but I dont think codeskulptor supports that
+#in: list of points
 
-#? Is there another way to seperate the rendering engine from game?
+#def PolyTrim(points)
+
 class DrawEngine:
-
-    #TODO: Class drawable- parent class for anything that can be rendered
-    #must have cmp so can decide rendeirng order (probly average depth)
-    #must have draw function (duh)
-    
-    #### Class camera - represents users perspective in space
-    # (a vector) defined by a point, angle and magnitude
-    # intended to support 1st person style movement
-    # i. e. can move camera relative to itself
-    # and rotate
+          
     class Camera:
-        def __init__(self, x, y, z, xAngle, yAngle, zAngle):
-            self.vpX = x
+        def draw(self, canvas):
+            list = []
+            for a in world_objects:
+                b = a.transform(self)
+                if b is not None:
+                    list.append(b)
+            list.sort()
+            for twoDPoly in list:
+                twoDPoly.draw(canvas, self)
+                
+        def __init__(self, x, y, z, x_shift, y_shift, xAngle, yAngle, zAngle, world_objects, screen_x, screen_y, screen_width, screen_height):
             self.x = x
             self.y = y
             self.z = z
-            self.x_rotate = xAngle
+            self.x_shift = x_shift
+            self.y_shift = y_shift
             self.y_rotate = yAngle
-            self.z_rotate = zAngle
+            self.world_objects = world_objects
+            self.scren_x = screen_x
+            self.screen_y = screen_y
+            self.screen_width = screen_width
+            self.screen_height = screen_height
+            self.focalLength = 250.0
+            self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
             
-        #moves camera (note from cameras perspective)
-        def move(self, x_change, y_change, z_change):
-                                                                                                                      #WHY????
-            xc, yc, zc = draw_engine.ThreeDPoint(x_change,y_change,z_change).get_rotated(self.x_rotate, self.y_rotate, math.pi-self.z_rotate, 0,0,0)
-            self.x += xc
-            self.y += yc
-            self.z += zc
+        def move(self, x_change, y_change, z_change):                                                                                                        #WHY????
+            self.x += x_change
+            self.y += y_change
+            self.z += z_change
             
-        #TODO Eventualy turning should be relative to self as well
-        def turn(self, x_change, y_change, z_change):
-            xc, yc, zc = draw_engine.ThreeDPoint(x_change,y_change,z_change).get_rotated(self.x_rotate, self.y_rotate, self.z_rotate, 0,0,0)
-            
-            #print xc, yc, zc
-           
-            self.x_rotate += xc
-            self.y_rotate += yc
-            self.z_rotate += zc
-    #End Camera Class
+        def turn(self, y_change):
+            self.y_rotate += y_change
     
-    #Draw Engine init
-    #Essentialy global variables
-    #! Why is focalLength here? Shouldnt that be part of camera?
-    def __init__(self, fl, vpX, vpY, cam):
-        self.focalLength = fl
-        self.vanishingPointX, self.vanishingPointY = vpX, vpY
-        self.camera = cam 
-    
-    #### Class 3D Point
-    # reperesents point in the 3D world
-    # contains functions to convert to 2D screen space for rendering
-    class ThreeDPoint:
+    class WorldPoint:
         def __init__(self,x,y,z):
             self.x = x
             self.y = y
             self.z = z
-        
-        #? Why does this fuction exist I thought 3D point was emmutable?
-        #def move(self,xChange,yChange,zChange):
-        #    self.x += xChange
-        #    self.y += yChange
-        #    self.z += zChange
-
-        # indexing of point [0] = x [1] = y [2] = z
+            
         def __getitem__(self,key):
             if key == 0:
                 return self.x
@@ -80,82 +55,29 @@ class DrawEngine:
                 return self.y
             if key == 2:
                 return self.z
-            
-           
-        def get_rotated(self,angle_x,angle_y,angle_z,center_x,center_y,center_z):
-            
-            x = self.x
-            y = self.y
-            z = self.z
-        
-            cos_x = math.cos(angle_x)
-            sin_x = math.sin(angle_x)
-            cos_y = math.cos(angle_y)
-            sin_y = math.sin(angle_y)
-            cos_z = math.cos(angle_z)
-            sin_z = math.sin(angle_z)
-            
-            #Rotate on x
-            old_y = y
-            y = (y - center_y) * cos_x - (z - center_z) *     sin_x + center_y
-            z = (z - center_z) * cos_x + (old_y - center_y) * sin_x + center_z
-            
-            #Rotate around x
-            old_x = x
-            x = (x - center_x) * cos_y - (z - center_z) *     sin_y + center_x
-            z = (z - center_z) * cos_y + (old_x - center_x) * sin_y + center_z
-            
-            #Rotate around z
-            old_x = x
-            x = (x - center_x) * cos_z - (y - center_y) *     sin_z + center_x
-            y = (y - center_y) * cos_z + (old_x - center_x) * sin_z + center_y
-            
-            return draw_engine.ThreeDPoint(x,y,z)
 
-
-        #transforms 3D world point to 2D screen cordinates
-        #! Also need to confirm its correct
-        def transform(self):
-            global draw_engine
+        def transform(self,camera):
+            x = self.x + camera.x
+            y = self.y + camera.y 
+            z = self.z + camera.z
             
-            y_rotate = draw_engine.camera.y_rotate
+            cos_y = math.cos(camera.y_rotate)
+            sin_y = math.sin(camera.y_rotate)
             
-            #should rotate around the camera
-            #?!?!I dont understand why this works but rotating around this point dosnt
-            
-            x = self.x + draw_engine.camera.x
-            y = self.y + draw_engine.camera.y 
-            z = self.z + draw_engine.camera.z
-            
-            
-            
-            cos_y = math.cos(draw_engine.camera.y_rotate)
-            sin_y = math.sin(draw_engine.camera.y_rotate)
-            
-            #Rotate around x
             old_x = x
-            x = x * cos_y - (z+draw_engine.focalLength)*     sin_y
-            z = (z+draw_engine.focalLength) * cos_y + old_x * sin_y - draw_engine.focalLength
+            x = x * cos_y - (z+camera.focalLength)*sin_y
+            z = (z+camera.focalLength) * cos_y + old_x * sin_y - camera.focalLength
             
-            
-            #!? Why dosnt the below line do same as above???
-            #x,y,z = draw_engine.ThreeDPoint(self.x,self.y,self.z).get_rotated(x_rotate, y_rotate, z_rotate, draw_engine.camera.x, draw_engine.camera.y , draw_engine.camera.z-draw_engine.focalLength)
-            
-            if draw_engine.focalLength + z == 0:
-                scale = 1000000000000 #some really big number
+            if camera.focalLength + z == 0:
+                scale = 1000000000000
             else:
-                scale = draw_engine.focalLength/(draw_engine.focalLength + z)
-            newX = draw_engine.vanishingPointX + x * abs(scale)
-            newY = draw_engine.vanishingPointY + y * abs(scale)
+                scale = camera.focalLength/(camera.focalLength + z)
 
-            return draw_engine.TwoDPoint(newX, newY, scale)
-    #End Class ThreeDPoint
+            return DrawEngine.ScreenPoint(
+                camera.vanishingPointX + x * abs(scale), 
+                camera.vanishingPointY + y * abs(scale), scale)
     
-    
-    #### Class 2D Point
-    # represents a point on the screen
-    # deceptive - is actualy the 2 screen demensions AND a depth demension
-    class TwoDPoint:
+    class ScreenPoint:
         def __init__(self,x,y,scale):
             self.x = x
             self.y = y
@@ -169,75 +91,71 @@ class DrawEngine:
             if key == 2:
                 return self.scale
             
-        #Draws point as a circle
-        #size of circle defined by how far away it is
-        #TODO line_width/radius/color shouldnt just be constant
-        def draw(self, canvas):
-            line_width = 5 #placeholder
-            radius = 5
-            canvas.draw_circle((self.x, self.y), radius * self.scale, line_width, 'White','Grey')
-    #End Class 2D point
+    class ScreenPoly:
+        def __init__(self, points, color_r, color_g, color_b):
+            self.color_r = color_r
+            self.color_g = color_g
+            self.color_b = color_b
             
-    #### Class Three D Quad
-    # represents 3 demsnional quadralateral
-    # supports comparision so can be sorted by rendering order
-    # primary thing I expect to be drawn
-    class ThreeDQuad:
-        def __init__(self,a,b,c,d):
-            self.a = a
-            self.b = b
-            self.c = c
-            self.d = d
-            self.priority = None
-            
-            self.color_r = random.randrange(70,100)
-            self.color_g = random.randrange(200,255)
-            self.color_b = random.randrange(70,100)
-                    
-        def pre_render(self):
-            self.x1, self.y1, self.z1 = self.a.transform()
-            self.x2, self.y2, self.z2 = self.b.transform()
-            self.x3, self.y3, self.z3 = self.c.transform()
-            self.x4, self.y4, self.z4 = self.d.transform()
-
-            self.priority = (self.z1+self.z2+self.z3+self.z4)/4.0
-            
-            if self.z1 < 0 or self.z2 < 0 or self.z3 < 0 or self.z4 < 0:
-                self.priority = 1000000000000
-
-            
-        #TODO implment cmp for other renderables so they all can be sorted together
+            self.points = points
+            self.priority = 0
+            for point in self.points:
+                self.priority += point[2]
+            self.priority /= len(self.points)
+        
+        def __getitem__(self,key):
+            return list[key]
+        
         def __cmp__(self, other):
-            if self.priority == None:
-                self.pre_render()
             if self.priority < other.priority:
                 return -1
             elif self.priority == other.priority:
                 return 0
             return 1
+            
+        def draw(self, canvas, camera):
+            new = []
+            for point in self.points:
+                new.append((point[0]+camera.x_shift, point[1]+camera.y_shift))
+            canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
 
-        def draw(self, canvas):
-            global draw_engine
+    class WorldPoly:
+        def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
+            self.points = points
             
-            if self.priority == None:
-                self.pre_render()
-                
-            line_thinkness = 1 # min(z1+z2+z3+z4, 10)
-            
-            points = [ (self.x1, self.y1, self.z1) , 
-                       (self.x2, self.y2, self.z2) , 
-                       (self.x3, self.y3, self.z3) , 
-                       (self.x4, self.y4, self.z4) ]
-            #Trim polygon
-            
-            if self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0:
-                if self.z1 < 0 or self.z2 < 0 or self.z3 < 0 or self.z4 < 0:
-                    draw = False
+            self.color_r = color_r
+            self.color_g = color_g
+            self.color_b = color_b
 
+        def transform(self, camera):
+            line_thinkness = 1
+            points = []
+            maxZ = -1000000000
+            minZ = 10000000000
+            for point in self.points:
+                points.append( point.transform(camera) )
+                if points[len(points)-1][2] > maxZ:
+                    maxZ = points[len(points)-1][2]
+                if points[len(points)-1][2] < maxZ:
+                    minZ = points[len(points)-1][2]
+
+            if maxZ > 0:
+                if minZ < 0:
+                    x1 = points[0][0]
+                    y1 = points[0][1]
+                    z1 = points[0][2] #NO
+                    x2 = points[1][0]
+                    y2 = points[1][1]
+                    z2 = points[1][2]
+                    x3 = points[2][0]
+                    y3 = points[2][1]
+                    z3 = points[2][2] #CRASHES LESS THEN THREE
+                   
+                    #this is really wrong 
                     def backface(x1,y1,z1,x2,y2,z2,x3,y3,z3):
                         return ((x3 - x1) * (y2 - y3)) > ((y3 - y1) * (x2 - x3))
                     
-                    backface_start = backface(self.x1,self.y1,self.z1,self.x2,self.y2,self.z2,self.x3,self.y3,self.z3)
+                    backface_start = backface(x1,y1,z1,x2,y2,z2,x3,y3,z3)
         
                     i = 0
                     while points[i][2] < 0:
@@ -259,74 +177,44 @@ class DrawEngine:
                         for  i in range(0,cut_end):
                             points.pop(0)
                             
-                        
-                        backface_end = backface(self.x1,self.y1,self.z1,point_a[0],point_a[1],point_a[2],point_b[0],point_b[1],point_b[2])
+                        backface_end = backface(x1,y1,z1,point_a[0],point_a[1],point_a[2],point_b[0],point_b[1],point_b[2])
         
                         if backface_start != backface_end:
-                            points.insert(cut_start,point_a) #This is where glitchy things come from
+                            points.insert(cut_start,point_a)
                             points.insert(cut_start,point_b)
                         else:
                             points.insert(cut_start,point_b)
                             points.insert(cut_start,point_a)
-                        
-                        
                     else:
                         for  i in range(cut_start,cut_end):
                             points.pop(cut_start)
                         points.insert(cut_start,point_b)
                         points.insert(cut_start,point_a)
+                return DrawEngine.ScreenPoly(points, self.color_r, self.color_g, self.color_b)
+            return None
 
-                new = []
-                for point in points:
-                    new.append((point[0], point[1]))
-                points = new
+world_objects = []
+n = 12
+l = 300 
 
-                canvas.draw_polygon( points, line_thinkness, 'rgba(0,0,0,0)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
-                    
-        
-            self.priority = None
-    # END class 3D Quad
-    
-    #END draw engine
-
-
-
-#eventualy move render_list into draw engine
-render_list = list()
-
-#move into draw_engine eventauly
-WIDTH = 800
-HEIGHT = 800
-
-draw_engine = DrawEngine(500.0, WIDTH/2, HEIGHT/2, DrawEngine.Camera(0,0,0,0,0,0)) 
-
-n = 10 #maze size nxn
-
-l = 300 #size of each maze peice - sence only thing in world essentaily how fast you move
-###Convert 2D maze to 3D Maze
-
-#Bottom Tiles
-#could be one big tile but then would render over stuff sometimes
 for y in range(0,n):
     for x in range(0,n):
-        if random.random() > 0.3:
-            render_list.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(l+x*l, 0, l+y*l),
-                                                      draw_engine.ThreeDPoint(0+x*l, 0, l+y*l),
-                                                      draw_engine.ThreeDPoint(0+x*l, 0, 0+y*l), 
-                                                      draw_engine.ThreeDPoint(l+x*l, 0, 0+y*l))) #bottem  
+        if random.random() > 0.75:
+            world_objects.append(DrawEngine.WorldPoly([DrawEngine.WorldPoint(l+x*l, 0, l+y*l),
+                                                      DrawEngine.WorldPoint(0+x*l, 0, l+y*l),
+                                                      DrawEngine.WorldPoint(0+x*l, 0, 0+y*l), 
+                                                      DrawEngine.WorldPoint(l+x*l, 0, 0+y*l)]))
+WIDTH = 1600
+HEIGHT = 800
+
+
+left_camera = DrawEngine.Camera(0,0,0, 0,       0, 0,0,0, world_objects, 0,       0, WIDTH/2, HEIGHT)
+right_camera = DrawEngine.Camera(0,0,0, WIDTH/2,0, 0,0,0, world_objects ,WIDTH/2 ,0, WIDTH/2, HEIGHT)
 
 def render_field(canvas):
-    global render_list, a_change, a,keys_down
-    
-    render_list.sort()
-    
-    for thing in render_list:
-        #Speed up by putting conditions here
-        # i. e. if thing far from camera
-        #if thing behind camera
-        #then move things into draw functon itself
-        thing.draw(canvas)
-
+    right_camera.draw(canvas)
+    left_camera.draw(canvas)
+    canvas.draw_line((WIDTH/2, 0), (WIDTH/2, HEIGHT), 4, 'White')
         
 #####################################################################
 #### Key handler stuff for testing
@@ -358,30 +246,42 @@ def key_action():
     global draw_engine,keys_down
  
     if keys_down[simplegui.KEY_MAP["up"]]:
-        draw_engine.camera.turn(math.pi * 0.025,0,0)
+        right_camera.move(0,0,-10)
+        #left_camera.turn(math.pi * 0.025,0,0)
+        #right_camera.turn(0)
     if keys_down[simplegui.KEY_MAP["down"]]:
-        draw_engine.camera.turn(math.pi * -0.025,0,0)
+        right_camera.move(0,0,10)
+        #left_camera.turn(math.pi * -0.025,0,0)
+        #right_camera.turn(0)
     if keys_down[simplegui.KEY_MAP["left"]]:
-        draw_engine.camera.turn(0,math.pi * -0.025,0)
+        right_camera.move(-10,0,0)
+        #left_camera.turn(0,math.pi * -0.025,0)
+        #right_camera.turn(math.pi * -0.025)
     if keys_down[simplegui.KEY_MAP["right"]]:
-        draw_engine.camera.turn(0,math.pi * 0.025,0)
+        right_camera.move(10,0,0)
+        #left_camera.turn(0,math.pi * 0.025,0)
+        #right_camera.turn(math.pi * 0.025)
     if keys_down[simplegui.KEY_MAP["o"]]:
-        draw_engine.camera.turn(0,0,math.pi * 0.025)
+        right_camera.move(0,-10,0)
+        #left_camera.turn(0,0,math.pi * 0.025)
+        #right_camera.turn(0)
     if keys_down[simplegui.KEY_MAP["p"]]:
-        draw_engine.camera.turn(0,0,math.pi * -0.025)
+        right_camera.move(0,10,0)
+        #left_camera.turn(0,0,math.pi * -0.025)
+        #right_camera.turn(0)
         
     if keys_down[simplegui.KEY_MAP["w"]]:
-        draw_engine.camera.move(0,0,-10) #should be relative
+        left_camera.move(0,0,-10)
     if keys_down[simplegui.KEY_MAP["a"]]:
-        draw_engine.camera.move(-10,0,0)
+        left_camera.move(-10,0,0)
     if keys_down[simplegui.KEY_MAP["s"]]:
-        draw_engine.camera.move(0,0,10)
+        left_camera.move(0,0,10)
     if keys_down[simplegui.KEY_MAP["d"]]:
-        draw_engine.camera.move(10,0,0)
+        left_camera.move(10,0,0)
     if keys_down[simplegui.KEY_MAP["q"]]:
-        draw_engine.camera.move(0,-10,0)
+        left_camera.move(0,-10,0)
     if keys_down[simplegui.KEY_MAP["e"]]:
-        draw_engine.camera.move(0,10,0)
+        left_camera.move(0,10,0)
 
 #######################################################################
 ##### game loop and make frame
