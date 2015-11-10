@@ -7,10 +7,31 @@ import random
 ##########################################################################################
 def trimZero(points, axis, axis_n):
         
- 
         def backface(x1,y1,x2,y2,x3,y3):
             return ((x3 - x1) * (y2 - y3)) > ((y3 - y1) * (x2 - x3))
-                    
+                   
+        #stolen from internet https://paolocrosetto.wordpress.com/python-code/
+        #works like magic
+        def check_convexity(p):
+            #this checks the sign of a number
+            def sign(x):
+                if x >= 0: 
+                    return 1
+                else: 
+                    return 0
+            #this defines triples of subsequent vertexes on any polygon
+            def triads(p):
+                return zip(p, p[1:]+[p[0]], p[2:]+[p[0]]+[p[1]])
+            #this uss Bastian's three-vertex function to check convexity
+            i = 0
+            for ((x0, y0), (x1, y1), (x2,y2)) in triads(p):
+                if i==0: fsign = sign(x2*(y1-y0)-y2*(x1-x0)+(x1-x0)*y0-(y1-y0)*x0)
+                else:
+                    newsign = sign(x2*(y1-y0)-y2*(x1-x0)+(x1-x0)*y0-(y1-y0)*x0)
+                    if newsign != fsign: return False
+                i +=1
+            return True
+            
         #point on line from point_a to point_b where axis = 0
         def intersection(point_a, point_b, axis, axis_n):
             new_point = []
@@ -26,8 +47,6 @@ def trimZero(points, axis, axis_n):
                 new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
                 return [new_point[0],new_point[1]]
         
-        backface_start = backface(points[0][0],points[0][1],points[1][0],points[1][1],points[2][0],points[2][1])
-
         min_num = 1000000000000
         max_num = -1000000000000
         for point in points:
@@ -38,7 +57,7 @@ def trimZero(points, axis, axis_n):
                 
         if min_num < 0 and max_num > 0:
             i = 0
-            while points[i][axis] <= 0:
+            while points[i][axis] < 0:
                 i = (i+1)%len(points)
             while points[i][axis] >= 0:
                 i = (i+1)%len(points)
@@ -46,11 +65,10 @@ def trimZero(points, axis, axis_n):
             point_a = intersection(points[i],points[i-1],axis,axis_n)
 
             cut_start = i
-            while points[i][axis] < 0:
+            while points[i][axis] <= 0:
                 i = (i+1)%len(points)
             point_b = intersection(points[i],points[i-1],axis,axis_n)
             cut_end = i
-
             if cut_start > cut_end:
                 for  i in range(cut_start,len(points)):
                     points.pop(cut_start)
@@ -59,13 +77,13 @@ def trimZero(points, axis, axis_n):
             else:
                 for i in range(cut_start,cut_end):
                     points.pop(cut_start)
-                
-            backface_end = backface(points[0][0],points[0][1],point_a[0],point_a[1],point_b[0],point_b[1])
-        
-            if backface_start == backface_end:
-                points.insert(cut_start,point_b)
-                points.insert(cut_start,point_a)
-            else:
+            
+            points.insert(cut_start,point_b)
+            points.insert(cut_start,point_a)
+            
+            if not check_convexity(points):
+                points.pop(cut_start-1)
+                points.pop(cut_start-1)
                 points.insert(cut_start,point_a)
                 points.insert(cut_start,point_b)
                 
@@ -74,9 +92,6 @@ def trimZero(points, axis, axis_n):
 #mutates points_list
 #trims polygon to be in rectangle defined by xMin, xMax yMin, yMax
 def polyTrim(points_list, xMin, xMax, yMin, yMax):
-    
-    
-    
     #can optimize by not running for edges of screen
     def trimAxis(points, min, max, axis, axis_n):
         if min != 0:
@@ -96,7 +111,7 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
     
 
 class DrawEngine:
-          
+
     class Camera:
         def draw(self, canvas):
             list = []
@@ -226,7 +241,6 @@ class DrawEngine:
     class WorldPoly:
         def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
             self.points = points
-            
             self.color_r = color_r
             self.color_g = color_g
             self.color_b = color_b
@@ -242,61 +256,9 @@ class DrawEngine:
                     maxZ = points[len(points)-1][2]
                 if points[len(points)-1][2] < maxZ:
                     minZ = points[len(points)-1][2]
-
             if maxZ > 0:
-                trimZero(points, 2, 3)
-#                if minZ < 0:
-#                    x1 = points[0][0]
-#                    y1 = points[0][1]
-#                    z1 = points[0][2] #NO
-#                    x2 = points[1][0]
-#                    y2 = points[1][1]
-#                    z2 = points[1][2]
-#                    x3 = points[2][0]
-#                    y3 = points[2][1]
-#                    z3 = points[2][2] #CRASHES LESS THEN THREE
-#                   
-#                    #this is really wrong 
-#                    def backface(x1,y1,z1,x2,y2,z2,x3,y3,z3):
-#                        return ((x3 - x1) * (y2 - y3)) > ((y3 - y1) * (x2 - x3))
-#                    
-#                    backface_start = backface(x1,y1,z1,x2,y2,z2,x3,y3,z3)
-#        
-#                    i = 0
-#                    while points[i][2] < 0:
-#                        i = (i+1)%len(points)
-#                        
-#                    while points[i][2] > 0:
-#                        i = (i+1)%len(points)
-#                    point_a = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
-#                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0) 
-#                    cut_start = i
-#                    while points[i][2] < 0:
-#                        i = (i+1)%len(points)
-#                    point_b = ( ((max(points[i-1][0],points[i][0])-min(points[i][0],points[i-1][0]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][0],points[i-1][0])),
-#                               ((max(points[i-1][1],points[i][1])-min(points[i][1],points[i-1][1]))*(max(points[i][2],points[i-1][2])/( abs(points[i][2])+abs(points[i-1][2])))+min(points[i][1],points[i-1][1])),0)
-#                    cut_end = i
-#                    if cut_start > cut_end:
-#                        for  i in range(cut_start,len(points)):
-#                            points.pop(cut_start)
-#                        for  i in range(0,cut_end):
-#                            points.pop(0)
-#                            
-#                        backface_end = backface(x1,y1,z1,point_a[0],point_a[1],point_a[2],point_b[0],point_b[1],point_b[2])
-#        
-#                        if backface_start != backface_end:
-#                            points.insert(cut_start,point_a)
-#                            points.insert(cut_start,point_b)
-#                        else:
-#                            points.insert(cut_start,point_b)
-#                            points.insert(cut_start,point_a)
-#                    else:
-#                        for  i in range(cut_start,cut_end):
-#                            points.pop(cut_start)
-#                        points.insert(cut_start,point_b)
-#                        points.insert(cut_start,point_a)
-                        
-                        
+                if minZ < 0:
+                    trimZero(points, 2, 3)
                 return DrawEngine.ScreenPoly(points, self.color_r, self.color_g, self.color_b)
             return None
 
