@@ -44,6 +44,7 @@ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 import simplegui
 import math
 import random
+import time
 
 #in: list of points
 ##########################################################################################
@@ -131,23 +132,26 @@ def trimZero(points, axis, axis_n):
                 
 ##########################################################################################
 
+
+    #can optimize by not running for edges of screen
+def trimAxis(points, min, max, axis, axis_n):
+    if min != 0:
+        for point in points:
+            point[axis] -= min
+    trimZero(points, axis, axis_n)
+    for point in points:
+        point[axis] = -(point[axis] + min - max)
+    trimZero(points, axis, axis_n)
+    for point in points:
+        point[axis] = -point[axis] + max
+
 #mutates points_list
 #trims polygon to be in rectangle defined by xMin, xMax yMin, yMax
-def polyTrim(points_list, xMin, xMax, yMin, yMax):
-    #can optimize by not running for edges of screen
-    def trimAxis(points, min, max, axis, axis_n):
-        if min != 0:
-            for point in points:
-                point[axis] -= min
-        trimZero(points, axis, axis_n)
-        for point in points:
-            point[axis] = -(point[axis] + min - max)
-        trimZero(points, axis, axis_n)
-        for point in points:
-            point[axis] = -point[axis] + max
-            
+def polyTrim(points_list, xMin, xMax, yMin, yMax):        
+    
     trimAxis(points_list, xMin, xMax, 0, 2)
     trimAxis(points_list, yMin, yMax, 1, 2)
+    
 
 
 class WorldAngle:
@@ -191,20 +195,18 @@ class WorldPoint:
         
     def transform(self,camera):
         x = self.x - camera.x
-        y = -self.z + camera.z
-        z = -self.y + camera.y
-        cos_xy = math.cos(-camera.angle_xy)
-        sin_xy = math.sin(-camera.angle_xy)
+        y = -self.z + camera.z 
+        z = -self.y + camera.y + camera.focalLength
+        cos_xy = math.cos(camera.angle_xy)
+        sin_xy = -math.sin(camera.angle_xy)
         old_x = x
-        x = x * cos_xy - (z+camera.focalLength)*sin_xy
-        z = (z+camera.focalLength) * cos_xy + old_x * sin_xy - camera.focalLength
-        if camera.focalLength + z == 0:
+        x = x * cos_xy - z * sin_xy
+        z = z * cos_xy + old_x * sin_xy - camera.focalLength
+        if z == 0:
             scale = 1000000000000
         else:
-            scale = camera.focalLength/(camera.focalLength + z)
-        return ScreenPoint(
-            camera.vanishingPointX + x * abs(scale), 
-            camera.vanishingPointY + y * abs(scale), -scale)
+            scale = camera.focalLength/z
+        return ScreenPoint(camera.vanishingPointX + x * abs(scale), camera.vanishingPointY + y * abs(scale), -scale)
     
 class Camera(WorldAngle, WorldPoint):
     def draw(self, canvas, world_objects):
@@ -238,6 +240,9 @@ class WorldPoly:
         self.color_g = color_g
         self.color_b = color_b
         
+        #temp
+        self.dmg = 5
+        
     def __getitem__(self,key):
         return self.points[key]
     
@@ -254,8 +259,8 @@ class WorldPoly:
                     minScale = points[len(points)-1][2]
             if maxScale > 0:
                 if minScale < 0:
-                    trimZero(points, 2, 3)
-                return ScreenPoly(points, self.color_r, self.color_g, self.color_b)
+                    trimZero(points, 2, 3)                                             #dmg part temporary
+                return ScreenPoly(points, self.color_r/5*int(self.dmg), self.color_g/5*int(self.dmg), self.color_b/5*int(self.dmg) )
             return None
         
     #prototope temp
@@ -291,28 +296,32 @@ class WorldPlayer(WorldPoint, WorldAngle):
     def __init__(self,x,y):
         WorldPoint.__init__(self, x, y, 75)
         WorldAngle.__init__(self, 0)
-        self.z_vel = 1
+        self.z_vel = 20
         
-    def update(self):
+    def update(self, time_delta):
         if self.z_vel >= 0:
-             self.z += self.z_vel
-        elif self.z >= 75 and self.z + self.z_vel < 75:
+             self.z += self.z_vel*time_delta
+        elif self.z >= 75 and self.z + self.z_vel*time_delta < 75:
          
             collide = False
             for item in world_objects:
                 if item != player_a and item != player_b:
                     if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.y >= item.min_y()-50  and self.y <= item.max_y()+50 :
                         collide = True
+                        item.dmg -= 0.1 #temp!!!
+                        if item.dmg <= 0:
+                            world_objects.remove(item)
                         break
             if not collide:
-                self.z += self.z_vel
+                self.z += self.z_vel*time_delta
             else:
                 self.z = 75
                 self.z_vel = 0
         else:
-            self.z += self.z_vel
+            self.z += self.z_vel*time_delta
         
-        self.z_vel -= 3
+        self.z_vel -= 1200*time_delta
+        
        
     def jump(self):
         if self.z == 75:
@@ -321,26 +330,29 @@ class WorldPlayer(WorldPoint, WorldAngle):
                 if item != player_a and item != player_b:
                     if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.y >= item.min_y()-50  and self.y <= item.max_y()+50 :
                         collide = True
+                        item.dmg -= 1 #temp!!!
+                        if item.dmg <= 0:
+                            world_objects.remove(item)
                         break
             #cases: in air above, on platform, below platform
             if collide: 
-                self.z_vel += 40
+                self.z_vel += 800
        
-    def forward(self):
-        self.y += 20 * math.cos(self.angle_xy)
-        self.x += 20 * math.sin(self.angle_xy)
+    def forward(self, time_delta):
+        self.y += 500 * time_delta * math.cos(self.angle_xy)
+        self.x += 500 * time_delta * math.sin(self.angle_xy)
         
-    def left(self):
-        self.x -= 20 * math.cos(self.angle_xy)
-        self.y += 20 * math.sin(self.angle_xy)
+    def left(self, time_delta):
+        self.x -= 500 * time_delta * math.cos(self.angle_xy)
+        self.y += 500 * time_delta * math.sin(self.angle_xy)
         
-    def right(self):
-        self.x += 20 * math.cos(self.angle_xy)
-        self.y -= 20 * math.sin(self.angle_xy)
+    def right(self, time_delta):
+        self.x += 500 * time_delta * math.cos(self.angle_xy)
+        self.y -= 500 * time_delta * math.sin(self.angle_xy)
        
-    def back(self):
-        self.y -= 20 * math.cos(self.angle_xy)
-        self.x -= 20 * math.sin(self.angle_xy)
+    def back(self, time_delta):
+        self.y -= 500 * time_delta * math.cos(self.angle_xy)
+        self.x -= 500 * time_delta * math.sin(self.angle_xy)
         
 #class ScreenImage:
 #    def __init__(self,x,y,image)
@@ -426,12 +438,12 @@ class ScreenPoly:
             canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
 
 world_objects = []
-n = 5
+n = 10
 l = 300 
 
 for y in range(0,n):
     for x in range(0,n):
-        if random.random() > 0.2:
+        if random.random() > 0.4:
             world_objects.append(WorldPoly([WorldPoint(l+x*l, l+y*l, 0),
                                                       WorldPoint(0+x*l, l+y*l, 0),
                                                       WorldPoint(0+x*l, y*l, 0), 
@@ -463,10 +475,10 @@ def render_frame(canvas):
     #canvas.draw_line((0, 100), (WIDTH, 100), 4, 'White')
     canvas.draw_text('Avery Whitaker | (Split-Screen Multiplayer Prototype) V0.8', (30, 50), 48, 'Red')
     
-def update_world():
+def update_world(time_delta):
     
-    player_a.update()
-    player_b.update()
+    player_a.update(time_delta)
+    player_b.update(time_delta)
     
     dx = player_b.x-player_a.x
     dy = player_b.y-player_a.y
@@ -479,14 +491,11 @@ def update_world():
         keys_down[simplegui.KEY_MAP["up"]] = False
         keys_down[simplegui.KEY_MAP["w"]] = False
     
-    # if L > 50:
-     #   if L > 200:
     player_a.set_angle_xy(math.pi/2-angle_a)
     player_b.set_angle_xy(math.pi/2-angle_b)
 
     left_camera.set_angle_xy(player_a.angle_xy)
     right_camera.set_angle_xy(player_b.angle_xy)
-
 
     left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 500+player_a.z)
     right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 500+player_b.z)
@@ -514,38 +523,57 @@ def keyup(k):
     global keys_down
     keys_down[k] = False
             
-def key_action():    
+def key_action(time_delta):    
     
     if keys_down[simplegui.KEY_MAP["up"]]:
-        player_b.forward()
+        player_b.forward(time_delta)
     if keys_down[simplegui.KEY_MAP["down"]]:
-        player_b.back()
+        player_b.back(time_delta)
     if keys_down[simplegui.KEY_MAP["left"]]:
-        player_b.left()
+        player_b.left(time_delta)
     if keys_down[simplegui.KEY_MAP["right"]]:
-        player_b.right()
+        player_b.right(time_delta)
         
     if keys_down[16]:
         player_b.jump()
     
-    
     if keys_down[simplegui.KEY_MAP["s"]]:
-        #player_a.back(math.atan2(p2y - p1y, p2x - p1x))
-        player_a.back()
+        player_a.back(time_delta)
     if keys_down[simplegui.KEY_MAP["a"]]:
-        player_a.left()
+        player_a.left(time_delta)
     if keys_down[simplegui.KEY_MAP["d"]]:
-        player_a.right()
+        player_a.right(time_delta)
     if keys_down[simplegui.KEY_MAP["w"]]:
-         player_a.forward()
+         player_a.forward(time_delta)
         
     if keys_down[simplegui.KEY_MAP["space"]]:
         player_a.jump()
 
+time_list = []
+count = 0
+prev_time = time.time()
+    
 def game_loop(canvas):
+    global count, prev_time
+    delta_time = time.time() - prev_time
+    prev_time = time.time()
+    
+    ##main Stuff
+    update_world(delta_time)
     render_frame(canvas)
-    update_world()
-    key_action()
+    key_action(delta_time)
+    
+    time_list.append(delta_time)
+    if(len(time_list) > 20):
+        time_list.pop(0)
+    avg_time = 0
+    for time_t in time_list:
+        avg_time += time_t
+    avg_time /= len(time_list)
+    count+=1
+    if count%20==0:
+        print "FPS: " + str(int(10/avg_time)/10)
+        print "Time Delta: " + str(delta_time)
 
 frame = simplegui.create_frame("~", WIDTH, HEIGHT)
 frame.set_draw_handler(game_loop)
