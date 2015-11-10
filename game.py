@@ -220,16 +220,13 @@ class DrawEngine:
             #if plane intersects veiwplane: oh no!
             #HELP
             #if self.priority > 0:
-            brightness = (self.priority)/2
+            brightness = 200*self.priority/draw_engine.focalLength
             #print brightness
-            if brightness > 0.5 and self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0:
+            if brightness > 0.2 and ( self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0 ):
                 canvas.draw_polygon( [(self.x1, self.y1), 
                                       (self.x2, self.y2), 
                                       (self.x3, self.y3), 
                                       (self.x4, self.y4)], line_thinkness, 'rba(0,0,0,0)',"rgb("+str(max(min(int(self.color_r*brightness),self.color_r),0))+","+str(max(min(int(self.color_g*brightness),self.color_g),0))+","+str(max(min(int(self.color_b*brightness),self.color_b),0))+")")
-                #canvas.draw_polygon( [(self.x1, self.y1), 
-                #                      (self.x2, self.y2), 
-                #                      (self.x3, self.y3), 
                 #                      (self.x4, self.y4)], line_thinkness, 'White',"rgb("+str(self.color_r,255)+","+str(self.color_g)+","+str(self.color_b)+")")
         
             self.priority = None
@@ -249,7 +246,7 @@ class DrawEngine:
 render_list = list()
 
 #move into draw_engine eventauly
-WIDTH = 1200
+WIDTH = 800
 HEIGHT = 800
 
 draw_engine = DrawEngine(500.0, WIDTH/2, HEIGHT/2, DrawEngine.Camera(0,0,0,0,0,0))
@@ -281,7 +278,7 @@ def make_maze(w = 16, h = 8):
     return rtr
 ##End maze gen magic
  
-n = 5 #maze size nxn
+n = 4 #maze size nxn
 
 maze = make_maze(n,n)
 print maze
@@ -379,8 +376,11 @@ def render_field(canvas):
         #then move things into draw functon itself
         thing.draw(canvas)
         
-        
-    flashlgight_effect(canvas, 'rgba(0,0,0,0.7)', (WIDTH/2, HEIGHT/2),WIDTH/5, 10)
+    #for i in range(10,40):
+    #    flashlgight_effect(canvas, 'rgba(0,0,0,'+str(0.3*i/20)+')', (WIDTH/2, HEIGHT/2),WIDTH/10+WIDTH*i*0.03, 6)
+
+    #flashlgight_effect(canvas, 'rgba(0,0,0,0.3)', (WIDTH/2, HEIGHT/2),WIDTH/7, 10)
+
 
 #####################################################################
 #### Key handler stuff for testing
