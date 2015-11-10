@@ -33,7 +33,7 @@ class DrawEngine:
         #moves camera (note from cameras perspective)
         #! BROKEN TODO HELP
         def move(self, x_change, y_change, z_change):
-            xc, yc, zc = draw_engine.ThreeDPoint(x_change,y_change,z_change).get_rotated(self.x_rotate, self.y_rotate, self.z_rotate, 0,0,0)
+            xc, yc, zc = draw_engine.ThreeDPoint(x_change,y_change,z_change).get_rotated(self.x_rotate, self.y_rotate, math.pi-self.z_rotate, 0,0,0)
             #print x_change, y_change, z_change
             self.x += xc
             self.y += yc
@@ -133,11 +133,11 @@ class DrawEngine:
             #x,y,z = draw_engine.ThreeDPoint(self.x,self.y,self.z).get_rotated(x_rotate, y_rotate, z_rotate, draw_engine.camera.x, draw_engine.camera.y , draw_engine.camera.z-draw_engine.focalLength)
             
             if draw_engine.focalLength + z == 0:
-                scale = 100000000000000000 #some really big number
+                scale = 1000000000000 #some really big number
             else:
                 scale = draw_engine.focalLength/(draw_engine.focalLength + z)
-            newX = draw_engine.vanishingPointX + x * scale
-            newY = draw_engine.vanishingPointY + y * scale
+            newX = draw_engine.vanishingPointX + x * abs(scale)
+            newY = draw_engine.vanishingPointY + y * abs(scale)
 
             return draw_engine.TwoDPoint(newX, newY, scale)
     #End Class ThreeDPoint
@@ -179,14 +179,27 @@ class DrawEngine:
             self.b = b
             self.c = c
             self.d = d
-            self.priority = -1
+            self.priority = None
             
-            self.color_r = random.randrange(100,255)
-            self.color_g = random.randrange(100,255)
-            self.color_b = random.randrange(100,255)
+            self.color_r = random.randrange(40,60)
+            self.color_g = random.randrange(40,60)
+            self.color_b = random.randrange(40,60)
+                    
+        def pre_render(self):
+            self.x1, self.y1, self.z1 = self.a.transform()
+            self.x2, self.y2, self.z2 = self.b.transform()
+            self.x3, self.y3, self.z3 = self.c.transform()
+            self.x4, self.y4, self.z4 = self.d.transform()
 
+            self.priority = (self.z1+self.z2+self.z3+self.z4)/4.0
+
+            
         #TODO implment cmp for other renderables so they all can be sorted together
         def __cmp__(self, other):
+            
+            if self.priority == None:
+                self.pre_render()
+                
             if self.priority < other.priority:
                 return -1
             elif self.priority == other.priority:
@@ -194,22 +207,32 @@ class DrawEngine:
             return 1
 
         def draw(self, canvas):
-            x1, y1, z1 = self.a.transform()
-            x2, y2, z2 = self.b.transform()
-            x3, y3, z3 = self.c.transform()
-            x4, y4, z4 = self.d.transform()
-
-            self.priority = (z1+z2+z3+z4)/2
+            global draw_engine
+            
+            if self.priority == None:
+                self.pre_render()
+                
             line_thinkness = 1 # min(z1+z2+z3+z4, 10)
+            
+            #need to change polygon so all positive z
             
             #need to figure out this
             #if plane intersects veiwplane: oh no!
             #HELP
-            if z1 > 0 and z2 > 0 and z3 > 0 and z4 > 0:
-                canvas.draw_polygon( [(x1, y1), 
-                                      (x2, y2), 
-                                      (x3, y3), 
-                                      (x4, y4)], line_thinkness, 'White',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
+            #if self.priority > 0:
+            brightness = (self.priority)/2
+            #print brightness
+            if brightness > 0.5 and self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0:
+                canvas.draw_polygon( [(self.x1, self.y1), 
+                                      (self.x2, self.y2), 
+                                      (self.x3, self.y3), 
+                                      (self.x4, self.y4)], line_thinkness, 'rba(0,0,0,0)',"rgb("+str(max(min(int(self.color_r*brightness),self.color_r),0))+","+str(max(min(int(self.color_g*brightness),self.color_g),0))+","+str(max(min(int(self.color_b*brightness),self.color_b),0))+")")
+                #canvas.draw_polygon( [(self.x1, self.y1), 
+                #                      (self.x2, self.y2), 
+                #                      (self.x3, self.y3), 
+                #                      (self.x4, self.y4)], line_thinkness, 'White',"rgb("+str(self.color_r,255)+","+str(self.color_g)+","+str(self.color_b)+")")
+        
+            self.priority = None
     # END class 3D Quad
     
     #END draw engine
@@ -227,7 +250,7 @@ render_list = list()
 
 #move into draw_engine eventauly
 WIDTH = 1200
-HEIGHT = 400
+HEIGHT = 800
 
 draw_engine = DrawEngine(500.0, WIDTH/2, HEIGHT/2, DrawEngine.Camera(0,0,0,0,0,0))
         
@@ -258,7 +281,7 @@ def make_maze(w = 16, h = 8):
     return rtr
 ##End maze gen magic
  
-n = 7 #maze size nxn
+n = 5 #maze size nxn
 
 maze = make_maze(n,n)
 print maze
@@ -271,10 +294,15 @@ l = 300 #size of each maze peice - sence only thing in world essentaily how fast
 #could be one big tile but then would render over stuff sometimes
 for y in range(0,n):
     for x in range(0,n):
+        render_list.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(l+x*l, 0, l+y*l),
+                                                  draw_engine.ThreeDPoint(0+x*l, 0, l+y*l),
+                                                  draw_engine.ThreeDPoint(0+x*l, 0, 0+y*l), 
+                                                  draw_engine.ThreeDPoint(l+x*l, 0, 0+y*l))) #bottem
         render_list.append(draw_engine.ThreeDQuad(draw_engine.ThreeDPoint(l+x*l, l, l+y*l),
                                                   draw_engine.ThreeDPoint(0+x*l, l, l+y*l),
                                                   draw_engine.ThreeDPoint(0+x*l, l, 0+y*l), 
                                                   draw_engine.ThreeDPoint(l+x*l, l, 0+y*l))) #bottem
+
 #horizontal tiles ( --- in 2D version)
 for row in range(0,n+1):
     for x in range(0,n):
@@ -291,9 +319,56 @@ for col in range(0,n+1):
                                                       draw_engine.ThreeDPoint(col*l, l, (y+1)*l), 
                                                       draw_engine.ThreeDPoint(col*l, 0, (1+y)*l), 
                                                       draw_engine.ThreeDPoint(col*l, 0, y*l)))
-### Rendering function     
+### Rendering function   
+
+#Adapted from http://np6.nfshost.com/tech/coding/python/inversecircle/
+def flashlgight_effect(canvas, color, center, radius, n):
+    global HEIGHT, WIDTH
+    left = center[0] - radius
+    right = center[0] + radius
+    top = center[1] - radius
+    bottom = center[1] + radius
+    screen_width = WIDTH
+    screen_height = HEIGHT
+
+    canvas.draw_polygon([[0, 0],         [left, 0],      [left, screen_height],  [0, screen_height]], 1, 'rgba(0,0,0,0', color)
+    canvas.draw_polygon([[right, 0],     [screen_width, 0],     [screen_width, screen_height], [right, screen_height]], 1, 'rgba(0,0,0,0', color)
+    canvas.draw_polygon([[left, 0],      [right, 0],      [right, top],  [left, top]], 1, 'rgba(0,0,0,0', color)
+    canvas.draw_polygon([ [left, bottom], [right, bottom], [right, screen_height],  [left, screen_height] ], 1, 'rgba(0,0,0,0', color)
+
+    #fill in the corners with pretty roundness
+
+    # list of numbers, 0 through n - 1
+    points = range(n) 
+
+    # list of n numbers evenly distributed from 0 to 1.0 inclusive
+    points = map(lambda pt: pt / (len(points) - 1.0), points) 
+
+    # list of n radians evenly distributed from 0 to pi/4 inclusive
+    points = map(lambda pt: pt * 3.1415926535 * 2 / 4, points) 
+
+    # list of points evenly distributed around the circumference in the first quadrant of a unit circle
+    points = map(lambda pt: (math.cos(pt), math.sin(pt)), points) 
+
+    # list of points evenly distributed around the circumference of the circle of desired size centered on the origin
+    points = map(lambda pt: (radius * pt[0], radius * pt[1]), points) 
+
+    # we'll draw these points with trapezoids that connect to the 
+    # top or bottom rectangle and flip them around each quadrant
+    for quadrant in ((1, 1), (-1, 1), (-1, -1), (1, -1)): 
+        x_flip = quadrant[0]
+        y_flip = quadrant[1]
+        edge = center[1] + radius * y_flip
+        for i in xrange(len(points) - 1):
+            A = (points[i][0] * x_flip + center[0], points[i][1] * y_flip + center[1])
+            B = (points[i + 1][0] * x_flip + center[0], points[i + 1][1] * y_flip + center[1])
+            A_edge = (A[0], edge)
+            B_edge = (B[0], edge)
+
+            canvas.draw_polygon((A,B,B_edge,A_edge), 1, 'rgba(0,0,0,0)',color)
+
 def render_field(canvas):
-    global render_list
+    global render_list, a_change, a,keys_down
     
     render_list.sort()
     
@@ -303,7 +378,10 @@ def render_field(canvas):
         #if thing behind camera
         #then move things into draw functon itself
         thing.draw(canvas)
-          
+        
+        
+    flashlgight_effect(canvas, 'rgba(0,0,0,0.7)', (WIDTH/2, HEIGHT/2),WIDTH/5, 10)
+
 #####################################################################
 #### Key handler stuff for testing
     
@@ -338,9 +416,9 @@ def key_action():
     if keys_down[simplegui.KEY_MAP["down"]]:
         draw_engine.camera.turn(math.pi * -0.025,0,0)
     if keys_down[simplegui.KEY_MAP["left"]]:
-        draw_engine.camera.turn(0,math.pi * 0.025,0)
-    if keys_down[simplegui.KEY_MAP["right"]]:
         draw_engine.camera.turn(0,math.pi * -0.025,0)
+    if keys_down[simplegui.KEY_MAP["right"]]:
+        draw_engine.camera.turn(0,math.pi * 0.025,0)
     if keys_down[simplegui.KEY_MAP["o"]]:
         draw_engine.camera.turn(0,0,math.pi * 0.025)
     if keys_down[simplegui.KEY_MAP["p"]]:
@@ -349,11 +427,11 @@ def key_action():
     if keys_down[simplegui.KEY_MAP["w"]]:
         draw_engine.camera.move(0,0,-10) #should be relative
     if keys_down[simplegui.KEY_MAP["a"]]:
-        draw_engine.camera.move(10,0,0)
+        draw_engine.camera.move(-10,0,0)
     if keys_down[simplegui.KEY_MAP["s"]]:
         draw_engine.camera.move(0,0,10)
     if keys_down[simplegui.KEY_MAP["d"]]:
-        draw_engine.camera.move(-10,0,0)
+        draw_engine.camera.move(10,0,0)
     if keys_down[simplegui.KEY_MAP["q"]]:
         draw_engine.camera.move(0,-10,0)
     if keys_down[simplegui.KEY_MAP["e"]]:
