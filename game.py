@@ -77,7 +77,7 @@ def trimZero(points, axis, axis_n):
             new_point = []
             for i in range(0,axis_n):
                 new_point.append(0)
-            if axis_n == 3:                
+            if axis_n == 3:       
                 new_point[axis-2] = max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2])*max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis])) + min(point_b[axis-2],point_a[axis-2])
                 new_point[axis-1] = (max(point_a[axis-1],point_b[axis-1])-min(point_b[axis-1],point_a[axis-1]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-1],point_a[axis-1])
                 new_point[axis] = 0
@@ -147,62 +147,20 @@ def polyTrim(points_list, xMin, xMax, yMin, yMax):
     trimAxis(points_list, xMin, xMax, 0, 2)
     trimAxis(points_list, yMin, yMax, 1, 2)
 
-        
-    
-class Camera:
-    def draw(self, canvas):
-         
-        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 3, 'White','Black')
-            
-        list = []
-        for a in world_objects:
-            b = a.transform(self)
-            if b is not None:
-                list.append(b)
-        list.sort()
-        for twoDPoly in list:
-            twoDPoly.draw(canvas, self)
-        
-        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 3, 'Black')
-           
-           
-    def __init__(self, x, y, z, yAngle, world_objects, screen_x, screen_y, screen_width, screen_height):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.y_rotate = yAngle
-        self.world_objects = world_objects
-        self.screen_x = screen_x
-        self.screen_y = screen_y
-        self.screen_width = screen_width
-        self.screen_height = screen_height
-        self.focalLength = 250.0
-        self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
-        
-    def move(self, x_change, y_change, z_change):                                                                                                        #WHY????
-        self.x += x_change
-        self.y += y_change
-        self.z += z_change
-        
-    def set_pos(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
-        
-    def turn(self, y_change):
-        self.y_rotate += y_change
-        
-    def set_angle(self, y_angle):
-        self.y_rotate = y_angle
 
 class WorldAngle:
-    def __init__(self, y_angle):
-        self.y_angle = y_angle
+    def __init__(self, angle_xy):
+        self.angle_xy = angle_xy
+        
+    def set_angle_xy(self, angle_xy):
+        self.angle_xy = angle_xy
+        
+    def turn_angle_xy(self, turn_amount):
+        self.angle_xy += turn_amount
     
     def angleBetweenWorldPoints(point_a, point_b):
-        return WorldAngle(math.atan2(point_b[2] - point_a[2], point_b[0] - point_a[0]))
-        
- 
+        return WorldAngle(math.atan2(point_b[1] - point_a[1], point_b[0] - point_a[0]))
+
 class WorldPoint:
     def __init__(self,x,y,z):
         self.x = x
@@ -213,6 +171,11 @@ class WorldPoint:
         self.x += a
         self.y += b
         self.z += c
+                
+    def set_pos(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
         
     def __getitem__(self,key):
         if key == 0:
@@ -221,15 +184,18 @@ class WorldPoint:
             return self.y
         if key == 2:
             return self.z
+        if key < 0:
+            return self[key+3]
+        
     def transform(self,camera):
-        x = self.x + camera.x
-        y = self.y + camera.y 
-        z = self.z + camera.z
-        cos_y = math.cos(camera.y_rotate)
-        sin_y = math.sin(camera.y_rotate)
+        x = self.x - camera.x
+        y = -self.z + camera.z
+        z = -self.y + camera.y
+        cos_xy = math.cos(-camera.angle_xy)
+        sin_xy = math.sin(-camera.angle_xy)
         old_x = x
-        x = x * cos_y - (z+camera.focalLength)*sin_y
-        z = (z+camera.focalLength) * cos_y + old_x * sin_y - camera.focalLength
+        x = x * cos_xy - (z+camera.focalLength)*sin_xy
+        z = (z+camera.focalLength) * cos_xy + old_x * sin_xy - camera.focalLength
         if camera.focalLength + z == 0:
             scale = 1000000000000
         else:
@@ -237,6 +203,31 @@ class WorldPoint:
         return ScreenPoint(
             camera.vanishingPointX + x * abs(scale), 
             camera.vanishingPointY + y * abs(scale), scale)
+    
+class Camera(WorldAngle, WorldPoint):
+    def draw(self, canvas, world_objects):
+        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 1, 'White','Grey')
+            
+        list = []
+        for a in world_objects:
+            b = a.transform(self)
+            if b is not None:
+                list.append(b)
+        list.sort()
+        for twoDPoly in list:
+            twoDPoly.draw(canvas, self)
+        
+        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 2, 'White')
+           
+    def __init__(self, x, y, z, yAngle, screen_x, screen_y, screen_width, screen_height):
+        WorldPoint.__init__(self, x,y,z)
+        WorldAngle.__init__(self, yAngle)
+        self.screen_x = screen_x
+        self.screen_y = screen_y
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.focalLength = 150.0
+        self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/4.0
     
 class WorldPoly:
     def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
@@ -247,20 +238,21 @@ class WorldPoly:
         
     def __getitem__(self,key):
         return self.points[key]
+    
     def transform(self, camera):
         line_thinkness = 1
         points = []
-        maxZ = -1000000000
-        minZ = 10000000000
+        maxY = -1000000000
+        minY = 10000000000
         for point in self.points:
             points.append( point.transform(camera) )
-            if points[len(points)-1][2] > maxZ:
-                maxZ = points[len(points)-1][2]
-            if points[len(points)-1][2] < maxZ:
-                minZ = points[len(points)-1][2]
-        if maxZ > 0:
-            if minZ < 0:
-                trimZero(points, 2, 3)
+            if points[len(points)-1][1] > maxY:
+                maxY = points[len(points)-1][1]
+            if points[len(points)-1][1] < maxY:
+                minY = points[len(points)-1][1]
+        if maxY > 0:
+            if minY < 0:
+                trimZero(points, 1, 3)
             return ScreenPoly(points, self.color_r, self.color_g, self.color_b)
         return None
     
@@ -278,83 +270,76 @@ class WorldPoly:
                 max_x = point[0]
         return max_x
     
-    def min_z(self):
-        min_z = 10000000000
+    def min_y(self):
+        min_y = 10000000000
         for point in self.points:
-            if point[2] < min_z:
-                min_z = point[2]
-        return min_z
+            if point[1] < min_y:
+                min_y = point[1]
+        return min_y
     
-    def max_z(self):
-        max_z = -1000000000
+    def max_y(self):
+        max_y = -1000000000
         for point in self.points:
-            if point[2] > max_z:
-                max_z = point[2]
-        return max_z
+            if point[1] > max_y:
+                max_y = point[1]
+        return max_y
        
     
-class WorldPlayer(WorldPoint):
-    def __init__(self,x,y,z):
-        WorldPoint.__init__(self, x,-75,z)
-        self.y_vel = 1
+class WorldPlayer(WorldPoint, WorldAngle):
+    def __init__(self,x,y):
+        WorldPoint.__init__(self, x, y, 75)
+        WorldAngle.__init__(self, 0)
+        self.z_vel = 1
         
     def update(self):
-        if self.y_vel < 0:
-             self.y += self.y_vel
-        elif self.y <= -75 and self.y+self.y_vel > -75:
+        if self.z_vel >= 0:
+             self.z += self.z_vel
+        elif self.z >= 75 and self.z + self.z_vel < 75:
          
+            collide = False
+            for item in world_objects:
+                if item != player_a and item != player_b:
+                    if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.y >= item.min_y()-50  and self.y <= item.max_y()+50 :
+                        collide = True
+                        break
+            if not collide:
+                self.z += self.z_vel
+            else:
+                self.z = 75
+                self.z_vel = 0
+        else:
+            self.z += self.z_vel
+        
+        self.z_vel -= 3
+       
+    def jump(self):
+        if self.y == 75:
             collide = False
             for item in world_objects:
                 if item != player_a and item != player_b:
                     if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.z >= item.min_z()-50  and self.z <= item.max_z()+50 :
                         collide = True
                         break
-            if not collide:
-                self.y += self.y_vel
-            else:
-                self.y = -75
-                self.y_vel = 0
-        else:
-            self.y += self.y_vel
-        
-        # if collide:
-        #     self.y = 100
-        # else:
-        #     self.y = 500
-        
-            
-        self.y_vel += 3
-       
-    def jump(self):
-        if self.y == -75:
-            collide = False
-            for item in world_objects:
-               if item != player_a and item != player_b:
-                    if self.x >= item.min_x()-50 and self.x <= item.max_x()+50  and self.z >= item.min_z()-50  and self.z <= item.max_z()+50 :
-                        collide = True
-                        break
             #cases: in air above, on platform, below platform
             if collide: 
-                self.y_vel -= 40
+                self.y_vel += 40
        
-    def forward(self, angle):
-        self.z += 20 * math.sin(angle)
-        self.x += 20 * math.cos(angle)
+    def forward(self):
+        self.y += 20 * math.sin(self.angle_xy)
+        self.x += 20 * math.cos(self.angle_xy)
         
-    def left(self, angle):
-        self.x -= 20 * math.sin(angle)
-        self.z += 20 * math.cos(angle)
+    def left(self):
+        self.x -= 20 * math.sin(self.angle_xy)
+        self.y += 20 * math.cos(self.angle_xy)
         
-    def right(self, angle):
-        self.x += 20 * math.sin(angle)
-        self.z -= 20 * math.cos(angle)
+    def right(self):
+        self.x += 20 * math.sin(self.angle_xy)
+        self.y -= 20 * math.cos(self.angle_xy)
        
-    def back(self, angle):
-        self.z -= 20 * math.sin(angle)
-        self.x -= 20 * math.cos(angle)
+    def back(self):
+        self.y -= 20 * math.sin(self.angle_xy)
+        self.x -= 20 * math.cos(self.angle_xy)
         
-     
-     
 #class ScreenImage:
 #    def __init__(self,x,y,image)
 #    	pass
@@ -379,6 +364,8 @@ class ScreenPoint:
             return self.y
         if key == 2:
             return self.scale
+        if key < 0:
+            return self[key+3]
             
     def __cmp__(self, other):
         if self.priority < other.priority:
@@ -444,13 +431,13 @@ l = 300
 for y in range(0,n):
     for x in range(0,n):
         if random.random() > 0.2:
-            world_objects.append(WorldPoly([WorldPoint(l+x*l, 0, l+y*l),
-                                                      WorldPoint(0+x*l, 0, l+y*l),
-                                                      WorldPoint(0+x*l, 0, 0+y*l), 
-                                                      WorldPoint(l+x*l, 0, 0+y*l)]))
+            world_objects.append(WorldPoly([WorldPoint(l+x*l, l+y*l, 0),
+                                                      WorldPoint(0+x*l, l+y*l, 0),
+                                                      WorldPoint(0+x*l, y*l, 0), 
+                                                      WorldPoint(l+x*l, y*l, 0)]))
 
-player_a = WorldPlayer(world_objects[0][0][0]-l/2, -75, world_objects[0][0][2]-l/2)
-player_b = WorldPlayer(world_objects[5][0][0]-l/2, -75, world_objects[5][0][2]-l/2)
+player_a = WorldPlayer(world_objects[0][0][0]-l/2, world_objects[0][0][2]-l/2)
+player_b = WorldPlayer(world_objects[5][0][0]-l/2, world_objects[5][0][2]-l/2)
 
 world_objects.append(player_a)
 world_objects.append(player_b)
@@ -458,35 +445,35 @@ world_objects.append(player_b)
             
 WIDTH = 1200
 HEIGHT = 600
+
 #                            (self, x, y, z, yAngle, world_objects, screen_x, screen_y, screen_width, screen_height)
-left_camera = Camera(-200,200,-200,  0, world_objects,     50,       100,      475,      HEIGHT-125)
-right_camera = Camera(-200,200,-200,  0, world_objects ,WIDTH/2+50 , 100,     475,      HEIGHT-125)
+left_camera = Camera(0,0,0,  0,     50,       100,      475,      HEIGHT-125)
+right_camera = Camera(0,0,200,  0 ,WIDTH/2+50 , 100,     475,      HEIGHT-125)
   
                 
-def render_field(canvas):
+def render_frame(canvas):
     canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Cyan')
     
     canvas.draw_text('RIP', (75, 200), 48, 'Black')
     canvas.draw_text('RIP', (WIDTH/2+100, 200), 48, 'Black')
     
-    if player_b[1] < 0:
-        right_camera.draw(canvas)
-    if player_a[1] < 0:
-        left_camera.draw(canvas)
+    if player_b[1] > -1000:
+        right_camera.draw(canvas,world_objects)
+    if player_a[1] > -1000:
+        left_camera.draw(canvas,world_objects)
     #canvas.draw_line((WIDTH/2, 100), (WIDTH/2, HEIGHT), 4, 'White')
     #canvas.draw_line((0, 100), (WIDTH, 100), 4, 'White')
     canvas.draw_text('Avery Whitaker | (Split-Screen Multiplayer Prototype) V0.4', (30, 50), 48, 'Red')
     
-    
-    
+def update_world():
     
     player_a.update()
     player_b.update()
      
     p1x = player_a[0]
-    p1y = player_a[2]
+    p1y = player_a[1]
     p2x = player_b[0]
-    p2y = player_b[2]
+    p2y = player_b[1]
 
     angle_a =math.atan2(p2y - p1y, p2x - p1x)
     angle_b = math.atan2(p1y - p2y, p1x - p2x)
@@ -504,8 +491,8 @@ def render_field(canvas):
     #left_camera.set_pos(-math.cos(-angle_a)*800-player_a.x, 200-player_a.y, -math.sin(-angle_a)*800-player_a.z)
     #right_camera.set_pos(-math.cos(-angle_b)*800-player_b.x, 200-player_b.y, -math.sin(-angle_b)*800-player_b.z)
     
-    left_camera.set_pos(-player_a.x, 300-player_a.y, 300-player_a.z)
-    right_camera.set_pos(-player_b.x, 300-player_b.y, 300-player_b.z)
+    left_camera.set_pos(player_a.x, -300+player_a.y, 300+player_a.z)
+    #right_camera.set_pos(player_b.x, -300+player_b.y, 300+player_b.z)
     
     
     
@@ -517,77 +504,43 @@ def render_field(canvas):
                 world_objects.remove(item)
                 break
     
+keys_down = {}
+
+for i in range(1,300):
+    keys_down[i] = False
     
-        
-#####################################################################
-#### Key handler stuff for testing
-    
-keys_down = {
-    simplegui.KEY_MAP['a']: False,
-    simplegui.KEY_MAP['b']: False,
-    simplegui.KEY_MAP['c']: False,
-    simplegui.KEY_MAP['d']: False,
-    simplegui.KEY_MAP['e']: False,
-    simplegui.KEY_MAP['f']: False,
-    simplegui.KEY_MAP['g']: False,
-    simplegui.KEY_MAP['h']: False,
-    simplegui.KEY_MAP['i']: False,
-    simplegui.KEY_MAP['j']: False,
-    simplegui.KEY_MAP['k']: False,
-    simplegui.KEY_MAP['l']: False,
-    simplegui.KEY_MAP['m']: False,
-    simplegui.KEY_MAP['n']: False,
-    simplegui.KEY_MAP['o']: False,
-    simplegui.KEY_MAP['p']: False,
-    simplegui.KEY_MAP['q']: False,
-    simplegui.KEY_MAP['r']: False,
-    simplegui.KEY_MAP['s']: False,
-    simplegui.KEY_MAP['t']: False,
-    simplegui.KEY_MAP['u']: False, #MAKE THIS A LOOP IDIOT
-    simplegui.KEY_MAP['v']: False,
-    simplegui.KEY_MAP['w']: False,
-    simplegui.KEY_MAP['x']: False,
-    simplegui.KEY_MAP['y']: False,
-    simplegui.KEY_MAP['z']: False,
-    simplegui.KEY_MAP['up']: False,
-    simplegui.KEY_MAP['down']: False,
-    16: False,
-    simplegui.KEY_MAP['space']: False,
-    simplegui.KEY_MAP['left']: False,
-    simplegui.KEY_MAP['right']: False
-}
-    
-def set_keydown_handler(k):
+def keydown(k):
     global keys_down
     keys_down[k] = True
     
-def set_keyup_handler(k):
+def keyup(k):
     global keys_down
     keys_down[k] = False
             
 def key_action():
     global draw_engine,keys_down
- 
-#    if keys_down[simplegui.KEY_MAP["up"]]:
-#        right_camera.move(0,0,-10)
-#    if keys_down[simplegui.KEY_MAP["down"]]:
-#        right_camera.move(0,0,10)
-#    if keys_down[simplegui.KEY_MAP["left"]]:
-#        right_camera.move(-10,0,0)
-#    if keys_down[simplegui.KEY_MAP["right"]]:
-#        right_camera.move(10,0,0)
-#    if keys_down[simplegui.KEY_MAP["o"]]:
-#        right_camera.move(0,-10,0)
-#    if keys_down[simplegui.KEY_MAP["p"]]:
-#        right_camera.move(0,10,0)
+
+
+    if keys_down[simplegui.KEY_MAP["up"]]:
+        right_camera.move(0,10,0)
+    if keys_down[simplegui.KEY_MAP["down"]]:
+        right_camera.move(0,-10,0)
+    if keys_down[simplegui.KEY_MAP["left"]]:
+        right_camera.move(-10,0,0)
+    if keys_down[simplegui.KEY_MAP["right"]]:
+        right_camera.move(10,0,0)
+    if keys_down[simplegui.KEY_MAP["o"]]:
+        right_camera.move(0,0,-10)
+    if keys_down[simplegui.KEY_MAP["p"]]:
+        right_camera.move(0,0,10)
 #    if keys_down[simplegui.KEY_MAP["z"]]:
-#        left_camera.turn(-.05)
+#        left_camera.turn_angle_y(-.05)
 #    if keys_down[simplegui.KEY_MAP["x"]]:
-#        left_camera.turn(0.05)
-#    if keys_down[simplegui.KEY_MAP["k"]]:
-#        right_camera.turn(-0.05)
-#    if keys_down[simplegui.KEY_MAP["l"]]:
-#        right_camera.turn(0.05)
+#        left_camera.turn_angle_y(0.05)
+    if keys_down[simplegui.KEY_MAP["k"]]:
+        right_camera.turn_angle_xy(-0.05)
+    if keys_down[simplegui.KEY_MAP["l"]]:
+        right_camera.turn_angle_xy(0.05)
 #    if keys_down[simplegui.KEY_MAP["w"]]:
 #        left_camera.move(0,0,-10)
 #    if keys_down[simplegui.KEY_MAP["a"]]:
@@ -602,47 +555,47 @@ def key_action():
 #        left_camera.move(0,10,0)
 
     p1x = player_a[0]
-    p1y = player_a[2]
+    p1y = player_a[1]
     p2x = player_b[0]
-    p2y = player_b[2]
+    p2y = player_b[1]
     
-    if keys_down[simplegui.KEY_MAP["up"]]:
-        player_b.forward(math.pi/2)
-        #player_b.forward(math.atan2(p1y - p2y, p1x - p2x))
-    if keys_down[simplegui.KEY_MAP["down"]]:
-        player_b.back(math.pi/2)
-    if keys_down[simplegui.KEY_MAP["left"]]:
-        player_b.left(math.pi/2)
-    if keys_down[simplegui.KEY_MAP["right"]]:
-        player_b.right(math.pi/2)
+    player_b.set_angle_xy(math.pi/2)
+    
+#    if keys_down[simplegui.KEY_MAP["up"]]:
+#        player_b.forward()
+#    if keys_down[simplegui.KEY_MAP["down"]]:
+#        player_b.back()
+#    if keys_down[simplegui.KEY_MAP["left"]]:
+#        player_b.left()
+#    if keys_down[simplegui.KEY_MAP["right"]]:
+#        player_b.right()
         
     if keys_down[16]:
         player_b.jump()
-        
+    
+    player_a.set_angle_xy(math.pi/2)
     
     if keys_down[simplegui.KEY_MAP["s"]]:
         #player_a.back(math.atan2(p2y - p1y, p2x - p1x))
-        player_a.back(math.pi/2)
+        player_a.back()
     if keys_down[simplegui.KEY_MAP["a"]]:
-        player_a.left(math.pi/2)
+        player_a.left()
     if keys_down[simplegui.KEY_MAP["d"]]:
-        player_a.right(math.pi/2)
+        player_a.right()
     if keys_down[simplegui.KEY_MAP["w"]]:
-        player_a.forward(math.pi/2)
+         player_a.forward()
         
     if keys_down[simplegui.KEY_MAP["space"]]:
         player_a.jump()
 
-
 def game_loop(canvas):
-    render_field(canvas)
+    render_frame(canvas)
+    update_world()
     key_action()
 
-
-
-frame = simplegui.create_frame("", WIDTH, HEIGHT)
+frame = simplegui.create_frame("~", WIDTH, HEIGHT)
 frame.set_draw_handler(game_loop)
-frame.set_keydown_handler(set_keydown_handler)
-frame.set_keyup_handler(set_keyup_handler)
+frame.set_keydown_handler(keydown)
+frame.set_keyup_handler(keyup)
 
 frame.start()
