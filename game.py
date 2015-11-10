@@ -2,6 +2,8 @@ import simplegui
 import math
 import random
 
+POLYS = True
+
 #####################################################################
 #### Class Draw Engine
 # meant to encapsulate all the drawing code
@@ -217,20 +219,66 @@ class DrawEngine:
                 
             line_thinkness = 1 # min(z1+z2+z3+z4, 10)
             
-            #need to change polygon so all positive z
+            points = [ (self.x1, self.y1, self.z1) , 
+                       (self.x2, self.y2, self.z2) , 
+                       (self.x3, self.y3, self.z3) , 
+                       (self.x4, self.y4, self.z4) ]
             
-            #need to figure out this
-            #if plane intersects veiwplane: oh no!
-            #HELP
-            #if self.priority > 0:
-            brightness = 200*self.priority/draw_engine.focalLength
-            #print brightness
-            if brightness > 0.2 and ( self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0 ):
-                canvas.draw_polygon( [(self.x1, self.y1), 
-                                      (self.x2, self.y2), 
-                                      (self.x3, self.y3), 
-                                      (self.x4, self.y4)], line_thinkness, 'rba(0,0,0,0)',"rgb("+str(max(min(int(self.color_r*brightness),self.color_r),0))+","+str(max(min(int(self.color_g*brightness),self.color_g),0))+","+str(max(min(int(self.color_b*brightness),self.color_b),0))+")")
-                #                      (self.x4, self.y4)], line_thinkness, 'White',"rgb("+str(self.color_r,255)+","+str(self.color_g)+","+str(self.color_b)+")")
+            #Trim polygon
+            if self.z1 > 0 or self.z2 > 0 or self.z3 > 0 or self.z4 > 0:
+                if self.z1 < 0 or self.z2 < 0 or self.z3 < 0 or self.z4 < 0:
+                    
+                    print "In + " + str(points)
+                    
+                    i = 0
+                    
+                    
+                    while points[i][2] < 0:
+                        i = (i+1)%len(points)
+                        
+                    while points[i][2] > 0:
+                        i = (i+1)%len(points)
+                    point_a = ( (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))* abs(points[i][0]-points[i-1][0] + min(points[i][0],points[i-1][0])), 
+                               (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))*  abs(points[i][1]-points[i-1][1] + min(points[i][1],points[i-1][1])),0)
+                    cut_start = i
+                    while points[i][2] < 0:
+                        i = (i+1)%len(points)
+                    point_b = ( (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))*   abs(points[i][0]-points[i-1][0] + min(points[i][0],points[i-1][0])), 
+                               (abs(points[i][2])/(abs(points[i][2])+abs(points[i-1][2])))*    abs(points[i][1]-points[i-1][1] + min(points[i][1],points[i-1][1])),0)
+                    cut_end = i
+                    if cut_start > cut_end:
+                        for  i in range(cut_start,len(points)):
+                            points.pop(cut_start)
+                        for  i in range(0,cut_end):
+                            points.pop(0)
+                    else:
+                        for  i in range(cut_start,cut_end):
+                            points.pop(cut_start)
+                            
+                    points.insert(cut_start,point_b)
+                    points.insert(cut_start,point_a)
+                    
+                    print cut_start
+                    print cut_end
+                    print "Out + " + str(points)
+
+                new = []
+                for point in points:
+                    new.append((point[0], point[1]))
+                points = new
+
+                #if self.priority > 0:
+                #brightness = 200*self.priority/draw_engine.focalLength
+                brightness = 5
+                #print brightness
+                if brightness > 0.2:
+
+                    if POLYS:
+                        canvas.draw_polygon( points, line_thinkness, 'rba(0,0,0,0)',"rgb("+str(max(min(int(self.color_r*brightness),self.color_r),0))+","+str(max(min(int(self.color_g*brightness),self.color_g),0))+","+str(max(min(int(self.color_b*brightness),self.color_b),0))+")")
+                        #                     (self.x4, self.y4)], line_thinkness, 'White',"rgb("+str(self.color_r,255)+","+str(self.color_g)+","+str(self.color_b)+")")
+                    else:
+                        canvas.draw_polygon( points, 5, 'rgba(255,255,255,1)',"rgba(0,0,0,0)")
+
         
             self.priority = None
     # END class 3D Quad
