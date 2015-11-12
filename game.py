@@ -123,7 +123,7 @@ class Camera(WorldAngle, WorldPoint):
         self.screen_y = screen_y
         self.screen_width = screen_width
         self.screen_height = screen_height
-        self.focalLength = 200.0
+        self.focalLength = 300.0
         self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
     
 class WorldPoly:
@@ -132,9 +132,6 @@ class WorldPoly:
         self.color_r = color_r
         self.color_g = color_g
         self.color_b = color_b
-        
-        #temp
-        self.dmg = 5
         
     def __getitem__(self,key):
         return self.points[key]
@@ -152,8 +149,8 @@ class WorldPoly:
                     minScale = points[len(points)-1][2]
             if maxScale > 0:
                 if minScale < 0:
-                    trim.trimZero(points, 2, 3)                                             #dmg part temporary
-                return ScreenPoly(points, self.color_r/5*int(self.dmg), self.color_g/5*int(self.dmg), self.color_b/5*int(self.dmg) )
+                    trim.trimZero(points, 2, 3)
+                return ScreenPoly(points, self.color_r, self.color_g, self.color_b )
             return None
         
     #prototope temp
@@ -187,7 +184,7 @@ class WorldPoly:
     
 class WorldPlayer(WorldPoint, WorldAngle):
     def __init__(self,x,y):
-        WorldPoint.__init__(self, x, y, 300)
+        WorldPoint.__init__(self, x, y, 600)
         WorldAngle.__init__(self, 0)
         self.z_vel = 20
         self.radius = 30
@@ -244,7 +241,6 @@ class ScreenPoint:
         self.y = y
         self.scale = scale
         self.priority = scale
-        self.radius = 30
         
     def __getitem__(self,key):
         if key == 0:
@@ -265,7 +261,7 @@ class ScreenPoint:
             
     def draw(self, canvas, camera):
         if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
-            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), self.radius * self.scale, 1, 'Black', 'Black')
+            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), 30 * self.scale, 1, 'Black', 'Black')
 
 class ScreenPoly:
     def __init__(self, points, color_r, color_g, color_b):
@@ -335,21 +331,20 @@ class WorldObjects():
         self.tile_size = 300
         self.tiles_width = 7
         self.tiles_height = 13
-        l = 200
         
         for x in range(0,self.tiles_width):
             self.grid.append([])
             for y in range(0,self.tiles_height):
-                level = random.randrange(0,3)
-                z = int(l/2.0*level)
+                level = random.randrange(0,2)
+                z = int(self.tile_size/2.0*level)
                 r = 170+level*30
                 g = 170+level*30
                 b = 170+level*30
                 self.grid[x].append(-100000000.0)
-                self.append(WorldPoly([WorldPoint(l+x*l, l+y*l, z),
-                                       WorldPoint(x*l, l+y*l, z),
-                                       WorldPoint(x*l, y*l, z), 
-                                       WorldPoint(l+x*l, y*l, z)], r, g, b))
+                self.append(WorldPoly([WorldPoint(self.tile_size+x*self.tile_size, self.tile_size+y*self.tile_size, z),
+                                       WorldPoint(x*self.tile_size, self.tile_size+y*self.tile_size, z),
+                                       WorldPoint(x*self.tile_size, y*self.tile_size, z), 
+                                       WorldPoint(self.tile_size+x*self.tile_size, y*self.tile_size, z)], r, g, b))
                 self.grid[x][y] = z
         
     def grid_height(self,x,y):
@@ -415,7 +410,7 @@ def update_world(time_delta):
     
     dx = player_b.x-player_a.x
     dy = player_b.y-player_a.y
-    l = 600
+    l = 1000
     L = math.sqrt( dx**2 + dy**2 )
     angle_a = WorldAngle.angleBetweenWorldPoints(player_a, player_b)
     angle_b = WorldAngle.angleBetweenWorldPoints(player_b, player_a)
