@@ -304,7 +304,7 @@ class ScreenPoly:
                 maxY = point[1]
         if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
             trim.polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
-            canvas.draw_polygon(new, 1, 'rgba(0,0,0,0)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
+            canvas.draw_polygon(new, 1, 'rgba(0,0,0,0)',"rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(0.8)+")")
 
 class GridMap():
     def __init__(self, width, height, tile_size):
@@ -329,8 +329,8 @@ class WorldObjects():
         self.grid = []
         
         self.tile_size = 300
-        self.tiles_width = 7
-        self.tiles_height = 13
+        self.tiles_width = 4
+        self.tiles_height = 26
         
         for x in range(0,self.tiles_width):
             self.grid.append([])
