@@ -45,112 +45,7 @@ import simplegui
 import math
 import random
 import time
-
-#in: list of points
-##########################################################################################
-def trimZero(points, axis, axis_n):
-    
-        #stolen from internet https://paolocrosetto.wordpress.com/python-code/
-        #works like magic
-        #I claim no rights to this function
-        def check_convexity(p):
-            #this checks the sign of a number
-            def sign(x):
-                if x >= 0: 
-                    return 1
-                else: 
-                    return 0
-            #this defines triples of subsequent vertexes on any polygon
-            def triads(p):
-                return zip(p, p[1:]+[p[0]], p[2:]+[p[0]]+[p[1]])
-            #this uss Bastian's three-vertex function to check convexity
-            i = 0
-            for ((x0, y0), (x1, y1), (x2,y2)) in triads(p):
-                if i==0: fsign = sign(x2*(y1-y0)-y2*(x1-x0)+(x1-x0)*y0-(y1-y0)*x0)
-                else:
-                    newsign = sign(x2*(y1-y0)-y2*(x1-x0)+(x1-x0)*y0-(y1-y0)*x0)
-                    if newsign != fsign: return False
-                i +=1
-            return True
-            
-        #point on line from point_a to point_b where axis = 0
-        def intersection(point_a, point_b, axis, axis_n):
-            new_point = []
-            for i in range(0,axis_n):
-                new_point.append(0)
-            if axis_n == 3:       
-                #new_point[axis-2] = (max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2]))*max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis])) + min(point_b[axis-2],point_a[axis-2])
-                #new_point[axis-1] = (max(point_a[axis-1],point_b[axis-1])-min(point_b[axis-1],point_a[axis-1]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-1],point_a[axis-1])
-                new_point[axis-2] = (-(point_b[axis-2]-point_a[axis-2])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-2]
-                new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
-                new_point[axis] = 0
-                return [new_point[0],new_point[1],new_point[2]]
-            if axis_n == 2:
-                new_point[axis] = 0
-                new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
-                return [new_point[0],new_point[1]]
-        
-        min_num = 1000000000000
-        max_num = -1000000000000
-        for point in points:
-            if point[axis] < min_num:
-                min_num = point[axis]
-            if point[axis] > max_num:
-                max_num = point[axis]
-                
-        if min_num < 0 and max_num > 0:
-            i = 0
-            while points[i][axis] < 0:
-                i = (i+1)%len(points)
-            while points[i][axis] > 0:
-                i = (i+1)%len(points)
-
-            point_a = intersection(points[i],points[i-1],axis,axis_n)
-
-            cut_start = i
-            while points[i][axis] <= 0:
-                i = (i+1)%len(points)
-            point_b = intersection(points[i],points[i-1],axis,axis_n)
-            cut_end = i
-            if cut_start > cut_end:
-                for  i in range(cut_start,len(points)):
-                    points.pop(cut_start)
-                for  i in range(0,cut_end):
-                    points.pop(0)
-            else:
-                for i in range(cut_start,cut_end):
-                    points.pop(cut_start)
-            
-            points.insert(cut_start,point_b)
-            points.insert(cut_start,point_a)
-            
-            if not check_convexity(points):
-                points.remove(point_a)
-                points.remove(point_b)
-                points.insert(cut_start,point_a)
-                points.insert(cut_start,point_b)
-                
-##########################################################################################
-
-
-    #can optimize by not running for edges of screen
-def trimAxis(points, min, max, axis, axis_n):
-    if min != 0:
-        for point in points:
-            point[axis] -= min
-    trimZero(points, axis, axis_n)
-    for point in points:
-        point[axis] = -(point[axis] + min - max)
-    trimZero(points, axis, axis_n)
-    for point in points:
-        point[axis] = -point[axis] + max
-
-#mutates points_list
-#trims polygon to be in rectangle defined by xMin, xMax yMin, yMax
-def polyTrim(points_list, xMin, xMax, yMin, yMax):        
-    
-    trimAxis(points_list, xMin, xMax, 0, 2)
-    trimAxis(points_list, yMin, yMax, 1, 2)
+import user40_hIgQ2QMFUJ_1 as trim
 
 class WorldAngle:
     def __init__(self, angle_xy):
@@ -257,7 +152,7 @@ class WorldPoly:
                     minScale = points[len(points)-1][2]
             if maxScale > 0:
                 if minScale < 0:
-                    trimZero(points, 2, 3)                                             #dmg part temporary
+                    trim.trimZero(points, 2, 3)                                             #dmg part temporary
                 return ScreenPoly(points, self.color_r/5*int(self.dmg), self.color_g/5*int(self.dmg), self.color_b/5*int(self.dmg) )
             return None
         
@@ -295,9 +190,10 @@ class WorldPlayer(WorldPoint, WorldAngle):
         WorldPoint.__init__(self, x, y, 300)
         WorldAngle.__init__(self, 0)
         self.z_vel = 20
+        self.radius = 30
         
     def update(self, time_delta):
-        ground_z = world_objects.grid_height(self.x,self.y)
+        ground_z = world_objects.grid_height(self.x,self.y)+self.radius
         
         if self.z_vel >= 0:
              self.z += self.z_vel*time_delta
@@ -312,7 +208,7 @@ class WorldPlayer(WorldPoint, WorldAngle):
     
        
     def jump(self):
-        ground_z = world_objects.grid_height(self.x,self.y)
+        ground_z = world_objects.grid_height(self.x,self.y)+self.radius
         if self.z == ground_z:
             self.z_vel += 800
        
@@ -347,8 +243,9 @@ class ScreenPoint:
         self.x = x
         self.y = y
         self.scale = scale
-       
         self.priority = scale
+        self.radius = 30
+        
     def __getitem__(self,key):
         if key == 0:
             return self.x
@@ -367,10 +264,8 @@ class ScreenPoint:
         return 1
             
     def draw(self, canvas, camera):
-        line_width = 5
-        radius = 30
         if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
-            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), radius * self.scale, line_width, 'Red','Red')
+            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), self.radius * self.scale, 1, 'Black', 'Black')
 
 class ScreenPoly:
     def __init__(self, points, color_r, color_g, color_b):
@@ -412,8 +307,8 @@ class ScreenPoly:
             if point[1] > maxY:
                 maxY = point[1]
         if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
-            polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
-            canvas.draw_polygon(new, 1, 'rgb(0,0,255)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
+            trim.polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
+            canvas.draw_polygon(new, 1, 'rgba(0,0,0,0)',"rgb("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+")")
 
 class GridMap():
     def __init__(self, width, height, tile_size):
@@ -440,17 +335,21 @@ class WorldObjects():
         self.tile_size = 300
         self.tiles_width = 7
         self.tiles_height = 13
-        l = 300
+        l = 200
         
         for x in range(0,self.tiles_width):
             self.grid.append([])
             for y in range(0,self.tiles_height):
-                z = int(l/2.0*random.randrange(0,2))
+                level = random.randrange(0,3)
+                z = int(l/2.0*level)
+                r = 170+level*30
+                g = 170+level*30
+                b = 170+level*30
                 self.grid[x].append(-100000000.0)
                 self.append(WorldPoly([WorldPoint(l+x*l, l+y*l, z),
                                        WorldPoint(x*l, l+y*l, z),
                                        WorldPoint(x*l, y*l, z), 
-                                       WorldPoint(l+x*l, y*l, z)]))
+                                       WorldPoint(l+x*l, y*l, z)], r, g, b))
                 self.grid[x][y] = z
         
     def grid_height(self,x,y):
@@ -533,17 +432,7 @@ def update_world(time_delta):
 
     left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 500+player_a.z)
     right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 500+player_b.z)
-    
-    
-#    
-#    random.shuffle(world_objects)
-#
-#    if random.random() > 0.99:
-#        for item in world_objects:
-#            if item != player_a and item != player_b:
-#                world_objects.remove(item)
-#                break
-    
+
 keys_down = {}
 
 for i in range(1,300):
