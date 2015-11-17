@@ -297,13 +297,13 @@ class WorldObjects():
         for x,y in self.x_y_range():
             if not self.grid[x].has_key(y):
                 if random.randrange(0,3) != 1:
-                    self.grid[x][y] = int(self.tile_size/0.5*int(random.randrange(0,1)*0.5*math.sqrt(x**2+y**2))/10)
+                    self.grid[x][y] = int(self.tile_size/0.5*int(random.randrange(0,2)*0.5*math.sqrt(x**2+y**2))/10)
                 else:
                     self.grid[x][y] = -100000
 
                 r = 170
                 g = 170
-                b = 170
+                b = 170+self.grid[x][y]
                 self.objects[x][y] = (WorldPoly([WorldPoint(self.tile_size/2+x*self.tile_size, self.tile_size/2+y*self.tile_size, self.grid[x][y]),
                                                  WorldPoint(-self.tile_size/2+x*self.tile_size,                self.tile_size/2+y*self.tile_size, self.grid[x][y]),
                                                  WorldPoint(-self.tile_size/2+x*self.tile_size,                -self.tile_size/2+y*self.tile_size, self.grid[x][y]), 
@@ -377,13 +377,12 @@ def update_world(time_delta):
     dx = player_b.x-player_a.x
     dy = player_b.y-player_a.y
     l = 1000
+    
     L = math.sqrt( dx**2 + dy**2 )
-    angle_a = WorldAngle.angleBetweenWorldPoints(player_a, player_b)
+    
+    angle_a = WorldAngle.angleBetweenWorldPoints(player_a, player_b)+math.pi
     angle_b = WorldAngle.angleBetweenWorldPoints(player_b, player_a)
     
-    if L < 100:
-        keys_down[simplegui.KEY_MAP["up"]] = False
-        keys_down[simplegui.KEY_MAP["w"]] = False
     player_a.set_angle_xy(math.pi/2-angle_a)
     player_b.set_angle_xy(math.pi/2-angle_b)
 
@@ -401,6 +400,9 @@ for i in range(1,300):
 def keydown(k):
     global keys_down
     keys_down[k] = True
+    
+    if k == simplegui.KEY_MAP["space"]:
+        player_a.jump()
     
 def keyup(k):
     global keys_down
@@ -428,10 +430,10 @@ def key_action(dt):
         player_a.right(dt)
     if keys_down[simplegui.KEY_MAP["w"]]:
          player_a.forward(dt)
-        
+
     if keys_down[simplegui.KEY_MAP["space"]]:
         player_a.jump()
-
+        
 time_list = []
 count = 0
 prev_time = time.time()
