@@ -159,6 +159,7 @@ class WorldPlayer(WorldPoint, WorldAngle):
         WorldAngle.__init__(self, 0)
         self.z_vel = 20
         self.radius = 30
+        self.speed = 600
         
     def update(self, time_delta):
         ground_z = world_objects.grid_height(self.x,self.y)+self.radius
@@ -179,20 +180,20 @@ class WorldPlayer(WorldPoint, WorldAngle):
             self.z_vel += 800
        
     def forward(self, dt):
-        self.y += 500 * dt * math.cos(self.angle_xy)
-        self.x += 500 * dt * math.sin(self.angle_xy)
+        self.y += self.speed * dt * math.cos(self.angle_xy)
+        self.x += self.speed * dt * math.sin(self.angle_xy)
         
     def left(self, dt):
-        self.x -= 500 * dt * math.cos(self.angle_xy)
-        self.y += 500 * dt * math.sin(self.angle_xy)
+        self.x -= self.speed * dt * math.cos(self.angle_xy)
+        self.y += self.speed * dt * math.sin(self.angle_xy)
         
     def right(self, dt):
-        self.x += 500 * dt * math.cos(self.angle_xy)
-        self.y -= 500 * dt * math.sin(self.angle_xy)
+        self.x += self.speed * dt * math.cos(self.angle_xy)
+        self.y -= self.speed * dt * math.sin(self.angle_xy)
        
     def back(self, dt):
-        self.y -= 500 * dt * math.cos(self.angle_xy)
-        self.x -= 500 * dt * math.sin(self.angle_xy)
+        self.y -= self.speed * dt * math.cos(self.angle_xy)
+        self.x -= self.speed * dt * math.sin(self.angle_xy)
 
 class ScreenPoint:
     def __init__(self,x,y,scale):
@@ -263,68 +264,62 @@ class ScreenPoly:
                 maxY = point[1]
         if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
             trim.polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
-            canvas.draw_polygon(new, 1, 'rgba(0,0,0,0)',"rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(0.8)+")")
+            canvas.draw_polygon(new, 1, 'rgba(200,200,255,1)',"rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(0.8)+")")
             
 class WorldObjects():
     def __init__(self):
         self.objects = {}
         self.grid = {}
         
-        self.center_tile_x = 1000000 #add big number so never negative
-        self.center_tile_y = 1000000
-        
-        self.tile_size = 300
-        self.tiles_width = 6
-        self.tiles_height = 6
+        self.tile_size = 400
+        self.square_size = 7
         
         self.set_center(0,0)
         
     def x_range(self):
-        return range(self.center_tile_x-int(self.tiles_width/2),self.center_tile_y+int(self.tiles_width/2))
+        return range(self.center_tile_x-int(self.square_size/2), self.center_tile_x+int(self.square_size/2))
         
     def y_range(self):
-        return range(self.center_tile_y-int(self.tiles_height/2),self.center_tile_y+int(self.tiles_height/2))
+        return range(self.center_tile_y-int(self.square_size/2), self.center_tile_y+int(self.square_size/2))
+        
+    def x_y_range(self):
+        return [(x,y) for x in self.x_range() for y in self.y_range()]
         
     def set_center(self,x,y):
-        x = int(x/self.tile_size)
-        y = int(y/self.tile_size)
-        
-        self.center_tile_x = x + 1000000 #add big number so never negative
-        self.center_tile_y = y + 1000000 
+        self.center_tile_x = int(x/self.tile_size)
+        self.center_tile_y = int(y/self.tile_size)
         
         for x in self.x_range():
-            
             if not self.grid.has_key(x):
                 self.grid[x] = {}
                 self.objects[x] = {}
                 
-            for y in self.y_range():
-                if not self.grid[x].has_key(y):
-                    self.grid[x][y] = int(self.tile_size/0.000002*random.randrange(0,2))
-                    self.objects[x][y] = {}
-                    
-                x1 = x - 1000000
-                y1 = y - 1000000
+        for x,y in self.x_y_range():
+            if not self.grid[x].has_key(y):
+                if random.randrange(0,3) != 1:
+                    self.grid[x][y] = int(self.tile_size/0.5*int(random.randrange(0,1)*0.5*math.sqrt(x**2+y**2))/10)
+                else:
+                    self.grid[x][y] = -100000
+
                 r = 170
                 g = 170
                 b = 170
-                self.objects[x][y] = (WorldPoly([WorldPoint(self.tile_size+x1*self.tile_size, self.tile_size+y1*self.tile_size, self.grid[x][y]),
-                                       WorldPoint(x1*self.tile_size, self.tile_size+y1*self.tile_size, self.grid[x][y]),
-                                       WorldPoint(x1*self.tile_size, y1*self.tile_size, self.grid[x][y]), 
-                                       WorldPoint(self.tile_size+x1*self.tile_size, y1*self.tile_size, self.grid[x][y])], r, g, b))
+                self.objects[x][y] = (WorldPoly([WorldPoint(self.tile_size/2+x*self.tile_size, self.tile_size/2+y*self.tile_size, self.grid[x][y]),
+                                                 WorldPoint(-self.tile_size/2+x*self.tile_size,                self.tile_size/2+y*self.tile_size, self.grid[x][y]),
+                                                 WorldPoint(-self.tile_size/2+x*self.tile_size,                -self.tile_size/2+y*self.tile_size, self.grid[x][y]), 
+                                                 WorldPoint(self.tile_size/2+x*self.tile_size,  -self.tile_size/2+y*self.tile_size, self.grid[x][y])], r, g, b))
                 
     def grid_height(self,x,y):
         
-        x = int(x/self.tile_size)
-        y = int(y/self.tile_size)
-        
-        x += 1000000
-        y += 1000000
+        x = round(x/self.tile_size)
+        y = round(y/self.tile_size)
         
         
-        if not x in self.x_range() or not y in self.y_range(): # x < self.center_tile_x-int(self.tiles_width/2) or y < self.center_tile_y-int(self.tiles_height/2) or x > (self.center_tile_y+int(self.tiles_width/2)) or y > self.center_tile_y+int(self.tiles_height/2):
+        
+        if not (x,y) in self.x_y_range(): # x < self.center_tile_x-int(self.tiles_width/2) or y < self.center_tile_y-int(self.tiles_height/2) or x > (self.center_tile_y+int(self.tiles_width/2)) or y > self.center_tile_y+int(self.tiles_height/2):
             return -10000000.00
-        return self.grid[int(x)][int(y)]
+        
+        return self.grid[x][y]
                     
     def __iter__(self):
         return self.objects.__iter__()
@@ -334,9 +329,8 @@ class WorldObjects():
        
     def to_list(self):
         list = []        
-        for x in self.x_range():
-            for y in self.y_range():
-                list.append(self.objects[x][y])
+        for x,y in self.x_y_range():
+            list.append(self.objects[x][y])
         return list
             
     def sort(self):
