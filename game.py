@@ -153,35 +153,6 @@ class WorldPoly:
                 return ScreenPoly(points, self.color_r, self.color_g, self.color_b )
             return None
         
-    #prototope temp
-    def min_x(self):
-        min_x = 10000000000
-        for point in self.points:
-            if point[0] < min_x:
-                min_x = point[0]
-        return min_x
-    def max_x(self):
-        max_x = -1000000000
-        for point in self.points:
-            if point[0] > max_x:
-                max_x = point[0]
-        return max_x
-    
-    def min_y(self):
-        min_y = 10000000000
-        for point in self.points:
-            if point[1] < min_y:
-                min_y = point[1]
-        return min_y
-    
-    def max_y(self):
-        max_y = -1000000000
-        for point in self.points:
-            if point[1] > max_y:
-                max_y = point[1]
-        return max_y
-       
-    
 class WorldPlayer(WorldPoint, WorldAngle):
     def __init__(self,x,y):
         WorldPoint.__init__(self, x, y, 600)
@@ -202,8 +173,6 @@ class WorldPlayer(WorldPoint, WorldAngle):
         
         self.z_vel -= 1200*time_delta
         
-    
-       
     def jump(self):
         ground_z = world_objects.grid_height(self.x,self.y)+self.radius
         if self.z == ground_z:
@@ -224,17 +193,7 @@ class WorldPlayer(WorldPoint, WorldAngle):
     def back(self, dt):
         self.y -= 500 * dt * math.cos(self.angle_xy)
         self.x -= 500 * dt * math.sin(self.angle_xy)
-        
-#class ScreenImage:
-#    def __init__(self,x,y,image)
-#    	pass
-             
-    #    def draw(self, canvas, camera):
-    #         pass
-            #crop so entirly whiten camera
-                     
-    #       canvas.draw_image(image, center_source, width_height_source, center_dest, width_height_dest, rotation)
-        
+
 class ScreenPoint:
     def __init__(self,x,y,scale):
         self.x = x
@@ -305,83 +264,90 @@ class ScreenPoly:
         if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
             trim.polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
             canvas.draw_polygon(new, 1, 'rgba(0,0,0,0)',"rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(0.8)+")")
-
-class GridMap():
-    def __init__(self, width, height, tile_size):
-        self.width = width
-        self.height = height
-        self.map = []
-        
-        for y in range(0,n):
-            self.grid.append([])
-            for x in range(0,n):
-                self.grid[y].append
-        
-    def get(self,x,y):
-        self.map[x/tile_size][y/y_tile_size]
-        
-        
-        #TODO generate self.objects dynoamicly based of self.grid (with min number of polys)
             
 class WorldObjects():
     def __init__(self):
-        self.objects = []
-        self.grid = []
+        self.objects = {}
+        self.grid = {}
+        
+        self.center_tile_x = 1000000 #add big number so never negative
+        self.center_tile_y = 1000000
         
         self.tile_size = 300
-        self.tiles_width = 4
-        self.tiles_height = 26
+        self.tiles_width = 6
+        self.tiles_height = 6
         
-        for x in range(0,self.tiles_width):
-            self.grid.append([])
-            for y in range(0,self.tiles_height):
-                level = random.randrange(0,2)
-                z = int(self.tile_size/2.0*level)
-                r = 170+level*30
-                g = 170+level*30
-                b = 170+level*30
-                self.grid[x].append(-100000000.0)
-                self.append(WorldPoly([WorldPoint(self.tile_size+x*self.tile_size, self.tile_size+y*self.tile_size, z),
-                                       WorldPoint(x*self.tile_size, self.tile_size+y*self.tile_size, z),
-                                       WorldPoint(x*self.tile_size, y*self.tile_size, z), 
-                                       WorldPoint(self.tile_size+x*self.tile_size, y*self.tile_size, z)], r, g, b))
-                self.grid[x][y] = z
+        self.set_center(0,0)
         
+    def x_range(self):
+        return range(self.center_tile_x-int(self.tiles_width/2),self.center_tile_y+int(self.tiles_width/2))
+        
+    def y_range(self):
+        return range(self.center_tile_y-int(self.tiles_height/2),self.center_tile_y+int(self.tiles_height/2))
+        
+    def set_center(self,x,y):
+        x = int(x/self.tile_size)
+        y = int(y/self.tile_size)
+        
+        self.center_tile_x = x + 1000000 #add big number so never negative
+        self.center_tile_y = y + 1000000 
+        
+        for x in self.x_range():
+            
+            if not self.grid.has_key(x):
+                self.grid[x] = {}
+                self.objects[x] = {}
+                
+            for y in self.y_range():
+                if not self.grid[x].has_key(y):
+                    self.grid[x][y] = int(self.tile_size/0.000002*random.randrange(0,2))
+                    self.objects[x][y] = {}
+                    
+                x1 = x - 1000000
+                y1 = y - 1000000
+                r = 170
+                g = 170
+                b = 170
+                self.objects[x][y] = (WorldPoly([WorldPoint(self.tile_size+x1*self.tile_size, self.tile_size+y1*self.tile_size, self.grid[x][y]),
+                                       WorldPoint(x1*self.tile_size, self.tile_size+y1*self.tile_size, self.grid[x][y]),
+                                       WorldPoint(x1*self.tile_size, y1*self.tile_size, self.grid[x][y]), 
+                                       WorldPoint(self.tile_size+x1*self.tile_size, y1*self.tile_size, self.grid[x][y])], r, g, b))
+                
     def grid_height(self,x,y):
-        if x < 0 or y < 0 or x > self.tiles_width*self.tile_size or y > self.tiles_height*self.tile_size:
+        
+        x = int(x/self.tile_size)
+        y = int(y/self.tile_size)
+        
+        x += 1000000
+        y += 1000000
+        
+        
+        if not x in self.x_range() or not y in self.y_range(): # x < self.center_tile_x-int(self.tiles_width/2) or y < self.center_tile_y-int(self.tiles_height/2) or x > (self.center_tile_y+int(self.tiles_width/2)) or y > self.center_tile_y+int(self.tiles_height/2):
             return -10000000.00
-        return self.grid[int(x/self.tile_size)][int(y/self.tile_size)]
+        return self.grid[int(x)][int(y)]
                     
     def __iter__(self):
         return self.objects.__iter__()
         
-    def append(self,object):
-        self.objects.append(object)
-        
     def remove(self,object):
         self.objects.remove(object)
        
-    def __getitem__(self,key):
-        return self.objects[key]
-         
+    def to_list(self):
+        list = []        
+        for x in self.x_range():
+            for y in self.y_range():
+                list.append(self.objects[x][y])
+        return list
+            
     def sort(self):
         self.objects.sort()
-        
-        
             
 world_objects = WorldObjects()
-n = 8
-l = 300 
-
-
-
-
             
-player_a = WorldPlayer(world_objects[0][0][0]-l/2, world_objects[0][0][1]-l/2)
-player_b = WorldPlayer(world_objects[5][0][0]-l/2, world_objects[5][0][1]-l/2)
+player_a = WorldPlayer(0, 0)
+player_b = WorldPlayer(0, 0)
 
-world_objects.append(player_a)
-world_objects.append(player_b)
+print world_objects.grid_height(0,0)
 
 WIDTH = 1200
 HEIGHT = 600
@@ -395,10 +361,14 @@ def render_frame(canvas):
     canvas.draw_text('RIP', (75, 200), 48, 'Black')
     canvas.draw_text('RIP', (WIDTH/2+100, 200), 48, 'Black')
     
+    render_objects = world_objects.to_list()
+    render_objects.append(player_a)
+    render_objects.append(player_b)
+    
     if player_b.z > -2000:
-        right_camera.draw(canvas,world_objects)
+        right_camera.draw(canvas,render_objects)
     if player_a.z > -2000:
-        left_camera.draw(canvas,world_objects)
+        left_camera.draw(canvas,render_objects)
     #canvas.draw_line((WIDTH/2, 100), (WIDTH/2, HEIGHT), 4, 'White')
     #canvas.draw_line((0, 100), (WIDTH, 100), 4, 'White')
     canvas.draw_text('Avery Whitaker | (Split-Screen Multiplayer Prototype) V0.8', (30, 50), 48, 'Red')
@@ -407,6 +377,8 @@ def update_world(time_delta):
     
     player_a.update(time_delta)
     player_b.update(time_delta)
+    
+    world_objects.set_center(player_a[0], player_a[1])
     
     dx = player_b.x-player_a.x
     dy = player_b.y-player_a.y
@@ -418,7 +390,6 @@ def update_world(time_delta):
     if L < 100:
         keys_down[simplegui.KEY_MAP["up"]] = False
         keys_down[simplegui.KEY_MAP["w"]] = False
-    
     player_a.set_angle_xy(math.pi/2-angle_a)
     player_b.set_angle_xy(math.pi/2-angle_b)
 
