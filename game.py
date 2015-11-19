@@ -273,15 +273,15 @@ class Grid:
         return list
 
 def render_frame(canvas):
-    global game_over
+    global game_over, left_score, right_score
     
     canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Green')
     
     canvas.draw_text(text_left, (75, 200), 48, 'Black')
     canvas.draw_text(text_right, (WIDTH/2+100, 200), 48, 'Black')
     
-    canvas.draw_text('Runner - WASD, Space', (75, 100), 24, 'Black')
-    canvas.draw_text('Seeker - Arrow Keys, Shift', (WIDTH/2+100, 100), 24, 'Black')
+    canvas.draw_text('Runner          Score: ' + str(left_score), (75, 30), 24, 'White')
+    canvas.draw_text('Seeker          Score: ' + str(right_score), (WIDTH/2+100, 30), 24, 'White')
     
     render_objects = grid.to_list()
     render_objects.append(player_a)
@@ -292,12 +292,12 @@ def render_frame(canvas):
     if not game_over:
         right_camera.draw(canvas,render_objects)
         left_camera.draw(canvas,render_objects)
-    canvas.draw_text('Avery Whitaker | This game still needs a name', (30, 50), 48, 'Red')
+    #canvas.draw_text('Avery Whitaker | This game still needs a name', (30, 50), 48, 'Red')
     
 
     
 def update_world(time_delta):
-    global game_over,text_left,text_right
+    global game_over,text_left,text_right,left_score,right_score
     
     player_a.update(time_delta)
     player_b.update(time_delta)
@@ -313,14 +313,17 @@ def update_world(time_delta):
     
     if not game_over and player_b.z < -2000:
         text_left = "You Win"
+        left_score += 1
         game_over = True
         
     if not game_over and player_a.z < -2000:
         text_right = "You Win"
+        right_score += 1
         game_over = True
     
     if not game_over and L < 100:
         text_right = "You Win"
+        right_score += 1
         game_over = True
     
     angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, player_b)+math.pi
@@ -415,17 +418,20 @@ def game_loop(canvas):
 
 WIDTH = 1200
 HEIGHT = 600
+
+left_score = 0
+right_score = 0
     
 def init():
     global player_a, player_b, grid, left_camera, right_camera, game_over, text_left, text_right
     
     grid = Grid()
             
-    player_a = WorldPlayer(300, 0, 255, 0, 0)
-    player_b = WorldPlayer(-300, 0, 0, 255, 0)
+    player_a = WorldPlayer(500, 0, 255, 0, 0)
+    player_b = WorldPlayer(-500, 0, 0, 255, 0)
 
-    left_camera = DrawEngine.Camera(0,0,0,  0,     50,       100,      475,      HEIGHT-125)
-    right_camera = DrawEngine.Camera(0,0,200,  0 , WIDTH/2+50 , 100,     475,      HEIGHT-125)
+    left_camera = DrawEngine.Camera(0,0,0,  0,     0,       50,      WIDTH/2,      HEIGHT-50)
+    right_camera = DrawEngine.Camera(0,0,0,  0 , WIDTH/2 , 50,     WIDTH/2,      HEIGHT-50)
     
     game_over = False
     text_left = "You Lose!"
@@ -436,7 +442,7 @@ frame.set_draw_handler(game_loop)
 frame.set_keydown_handler(keydown)
 frame.set_keyup_handler(keyup)
 
-reset_button = frame.add_button('Reset All', init)
+reset_button = frame.add_button('Next Round', init)
 
 init()
 
