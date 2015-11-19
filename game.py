@@ -60,6 +60,16 @@ class WorldAngle:
     def angleBetweenWorldPoints(point_a, point_b):
         return math.atan2(point_b[1] - point_a[1], point_b[0] - point_a[0])
     
+class Color:
+    def rgba(self):
+        return "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(self.color_a)+")"
+    
+    def __init__(self,r,g,b,a):
+        self.color_r = r
+        self.color_g = g
+        self.color_b = b
+        self.color_a = a
+    
 class WorldPoint:
     def __init__(self,x,y,z):
         self.x = x
@@ -101,15 +111,26 @@ class WorldPoint:
             scale = camera.focalLength/z
         return ScreenPoint(camera.vanishingPointX + x * abs(scale), camera.vanishingPointY + y * abs(scale), -scale)
     
+class WorldSphere(WorldPoint, Color):
+    def __init__(self, x, y, z, r, g, b, a):
+        WorldPoint.__init__(self, x, y, z)
+        Color.__init__(self, r, g, b, a)
+        
+    def transform(self,camera):
+        s = WorldPoint.transform(self,camera)
+        return ScreenCircle(s[0],s[1],s[2],self.color_r,self.color_g,self.color_b,self.color_a)
+
+
 class Camera(WorldAngle, WorldPoint):
     def draw(self, canvas, world_objects):
         canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 1, 'White','Grey')
             
         list = []
         for a in world_objects:
-            b = a.transform(self)
-            if b is not None:
-                list.append(b)
+            if a is not None:
+                b = a.transform(self)
+                if b is not None:
+                    list.append(b)
         list.sort()
         for twoDPoly in list:
             twoDPoly.draw(canvas, self)
@@ -126,12 +147,10 @@ class Camera(WorldAngle, WorldPoint):
         self.focalLength = 300.0
         self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
     
-class WorldPoly:
-    def __init__(self,points, color_r = random.randrange(70,100), color_g = random.randrange(200,255),color_b = random.randrange(70,100)):
+class WorldPoly(Color):
+    def __init__(self,points, r = random.randrange(70,100), g = random.randrange(200,255), b = random.randrange(70,100), a = 1):
         self.points = points
-        self.color_r = color_r
-        self.color_g = color_g
-        self.color_b = color_b
+        Color.__init__(self,r,g,b,a)
         
     def __getitem__(self,key):
         return self.points[key]
@@ -153,9 +172,9 @@ class WorldPoly:
                 return ScreenPoly(points, self.color_r, self.color_g, self.color_b )
             return None
         
-class WorldPlayer(WorldPoint, WorldAngle):
-    def __init__(self,x,y):
-        WorldPoint.__init__(self, x, y, 600)
+class WorldPlayer(WorldSphere, WorldAngle):
+    def __init__(self,x,y,r,b,g):
+        WorldSphere.__init__(self, x, y, 600, r,b,g,1)
         WorldAngle.__init__(self, 0)
         self.z_vel = 20
         self.radius = 30
@@ -194,6 +213,22 @@ class WorldPlayer(WorldPoint, WorldAngle):
     def back(self, dt):
         self.y -= self.speed * dt * math.cos(self.angle_xy)
         self.x -= self.speed * dt * math.sin(self.angle_xy)
+        
+    def shadow(self):
+        points = []
+        n = 20
+        angle = 0
+        shawdow_height = world_objects.grid_height(self.x,self.y)
+        r = 50
+        
+        if shawdow_height >= self.z-self.radius:
+            return None
+        
+        for i in range(0,n):
+            points.append(WorldPoint(self.x+50*math.cos(angle),self.y+50*math.sin(angle),world_objects.grid_height(self.x,self.y)))
+            angle+=(math.pi*2)/n
+            
+        return WorldPoly(points, 20, 20, 20)
 
 class ScreenPoint:
     def __init__(self,x,y,scale):
@@ -218,10 +253,22 @@ class ScreenPoint:
         elif self.priority == other.priority:
             return 0
         return 1
+    
+class ScreenCircle(ScreenPoint, Color):
+    def __init__(self,x,y,scale,r,g,b,a):
+        ScreenPoint.__init__(self,x,y,scale)
+        Color.__init__(self,r,g,b,a)
+        
+    def __cmp__(self, other):
+        if self.priority < other.priority:
+            return -1
+        elif self.priority == other.priority:
+            return 0
+        return 1
             
     def draw(self, canvas, camera):
         if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
-            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), 30 * self.scale, 1, 'Black', 'Black')
+            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), 30 * self.scale, 1, self.rgba(), self.rgba())
 
 class ScreenPoly:
     def __init__(self, points, color_r, color_g, color_b):
@@ -300,7 +347,6 @@ class WorldObjects():
                     self.grid[x][y] = int(self.tile_size/0.5*int(random.randrange(0,2)*0.5*math.sqrt(x**2+y**2))/10)
                 else:
                     self.grid[x][y] = -100000
-
                 r = 170
                 g = 170
                 b = 170+self.grid[x][y]
@@ -310,44 +356,21 @@ class WorldObjects():
                                                  WorldPoint(self.tile_size/2+x*self.tile_size,  -self.tile_size/2+y*self.tile_size, self.grid[x][y])], r, g, b))
                 
     def grid_height(self,x,y):
-        
         x = round(x/self.tile_size)
         y = round(y/self.tile_size)
         
-        
-        
-        if not (x,y) in self.x_y_range(): # x < self.center_tile_x-int(self.tiles_width/2) or y < self.center_tile_y-int(self.tiles_height/2) or x > (self.center_tile_y+int(self.tiles_width/2)) or y > self.center_tile_y+int(self.tiles_height/2):
+        if not (x,y) in self.x_y_range():
             return -10000000.00
-        
         return self.grid[x][y]
-                    
-    def __iter__(self):
-        return self.objects.__iter__()
-        
+ 
     def remove(self,object):
         self.objects.remove(object)
        
     def to_list(self):
-        list = []        
+        list = []
         for x,y in self.x_y_range():
             list.append(self.objects[x][y])
         return list
-            
-    def sort(self):
-        self.objects.sort()
-            
-world_objects = WorldObjects()
-            
-player_a = WorldPlayer(0, 0)
-player_b = WorldPlayer(0, 0)
-
-print world_objects.grid_height(0,0)
-
-WIDTH = 1200
-HEIGHT = 600
-
-left_camera = Camera(0,0,0,  0,     50,       100,      475,      HEIGHT-125)
-right_camera = Camera(0,0,200,  0 ,WIDTH/2+50 , 100,     475,      HEIGHT-125)
          
 def render_frame(canvas):
     canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Cyan')
@@ -355,9 +378,14 @@ def render_frame(canvas):
     canvas.draw_text('RIP', (75, 200), 48, 'Black')
     canvas.draw_text('RIP', (WIDTH/2+100, 200), 48, 'Black')
     
+    canvas.draw_text('Runner', (75, 100), 24, 'Black')
+    canvas.draw_text('Seeker', (WIDTH/2+100, 100), 24, 'Black')
+    
     render_objects = world_objects.to_list()
     render_objects.append(player_a)
     render_objects.append(player_b)
+    render_objects.append(player_a.shadow())
+    render_objects.append(player_b.shadow())
     
     if player_b.z > -2000:
         right_camera.draw(canvas,render_objects)
@@ -368,7 +396,6 @@ def render_frame(canvas):
     canvas.draw_text('Avery Whitaker | (Split-Screen Multiplayer Prototype) V0.8', (30, 50), 48, 'Red')
     
 def update_world(time_delta):
-    
     player_a.update(time_delta)
     player_b.update(time_delta)
     
@@ -393,7 +420,6 @@ def update_world(time_delta):
     right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 500+player_b.z)
 
 keys_down = {}
-
 for i in range(1,300):
     keys_down[i] = False
     
@@ -403,7 +429,9 @@ def keydown(k):
     
     if k == simplegui.KEY_MAP["space"]:
         player_a.jump()
-    
+    if keys_down[16]:
+        player_b.jump()
+
 def keyup(k):
     global keys_down
     keys_down[k] = False
@@ -459,9 +487,27 @@ def game_loop(canvas):
     if count%20==0:
         print "FPS: " + str(int(10/avg_time)/10)
 
+WIDTH = 1200
+HEIGHT = 600
+    
+def init():
+    global player_a, player_b, world_objects, left_camera, right_camera
+    
+    world_objects = WorldObjects()
+            
+    player_a = WorldPlayer(0, 0, 255, 0, 0)
+    player_b = WorldPlayer(0, 0, 0, 255, 0)
+
+    left_camera = Camera(0,0,0,  0,     50,       100,      475,      HEIGHT-125)
+    right_camera = Camera(0,0,200,  0 ,WIDTH/2+50 , 100,     475,      HEIGHT-125)
+
 frame = simplegui.create_frame("~", WIDTH, HEIGHT)
 frame.set_draw_handler(game_loop)
 frame.set_keydown_handler(keydown)
 frame.set_keyup_handler(keyup)
+
+reset_button = frame.add_button('Reset All', init)
+
+init()
 
 frame.start()
