@@ -46,7 +46,6 @@ import math
 import random
 import time
 import user40_vGEjZ00kyC_2 as DrawEngine
-
         
 class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def __init__(self,x,y,r,b,g):
@@ -54,25 +53,29 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         DrawEngine.WorldAngle.__init__(self, 0)
         self.z_vel = 20
         self.radius = 30
-        self.speed = 600
+        self.speed = 800
         
     def update(self, time_delta):
-        ground_z = world_objects.grid_height(self.x,self.y)+self.radius
+        global grid
+        ground_z = grid.grid_height(self.x,self.y)+self.radius
         
         if self.z_vel >= 0:
              self.z += self.z_vel*time_delta
         elif self.z >= ground_z and self.z + self.z_vel*time_delta < ground_z:
             self.z = ground_z
-            self.z_vel = 0
+            if grid.get_item(self.x,self.y).bouncy():
+                self.z_vel = 800
+            else:
+                self.z_vel = 0
         else:
             self.z += self.z_vel*time_delta
         
         self.z_vel -= 1200*time_delta
         
     def jump(self):
-        ground_z = world_objects.grid_height(self.x,self.y)+self.radius
+        ground_z = grid.grid_height(self.x,self.y)+self.radius
         if self.z == ground_z:
-            self.z_vel += 800
+            self.z_vel = 800
        
     def forward(self, dt):
         self.y += self.speed * dt * math.cos(self.angle_xy)
@@ -94,23 +97,43 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         points = []
         n = 10
         angle = 0
-        shawdow_height = world_objects.grid_height(self.x,self.y)
+        shawdow_height = grid.grid_height(self.x,self.y)
         r = 250
         
         if shawdow_height >= self.z-self.radius:
             return None
         
         for i in range(0,n):
-            points.append(DrawEngine.WorldPoint(self.x+50*math.cos(angle),self.y+50*math.sin(angle),world_objects.grid_height(self.x,self.y)))
+            points.append(DrawEngine.WorldPoint(self.x+50*math.cos(angle),self.y+50*math.sin(angle),grid.grid_height(self.x,self.y)))
             angle+=(math.pi*2)/n
             
         return DrawEngine.WorldPoly(points, 20, 20, 20)
 
-
-class WorldObjects():
+class GridSquare:
+    def __init__(self, height, world_poly = None, brightness = 0):
+        self.world_poly = world_poly
+        self.height = height
+        
+        if self.world_poly is not None:
+            self.world_poly.color_r = 120+30*brightness
+            self.world_poly.color_g = 120+30*brightness
+            self.world_poly.color_b = 220+30*brightness
+        
+    def height(self):
+        return self.height
+        
+    def transform(self,camera):
+        if self.world_poly is None:
+            return None
+        return self.world_poly.transform(camera)
+    
+    def bouncy(self):
+        return True
+    
+class Grid:
     def __init__(self):
         self.objects = {}
-        self.grid = {}
+        #self.grid = {}
         
         self.tile_size = 400
         self.square_size = 7
@@ -129,25 +152,23 @@ class WorldObjects():
     def set_center(self,x,y):
         self.center_tile_x = int(x/self.tile_size)
         self.center_tile_y = int(y/self.tile_size)
-        
-        for x in self.x_range():
-            if not self.grid.has_key(x):
-                self.grid[x] = {}
-                self.objects[x] = {}
                 
         for x,y in self.x_y_range():
-            if not self.grid[x].has_key(y):
+            if not self.objects.has_key(x):
+                self.objects[x] = {}
+            if not self.objects[x].has_key(y):
                 if random.randrange(0,3) != 1:
-                    self.grid[x][y] = int(self.tile_size/0.5*int(random.randrange(0,2)*0.5*math.sqrt(x**2+y**2))/10)
+                    level = random.randrange(0,2)
+                    height = int(self.tile_size/0.5*int(level*0.5*math.sqrt(x**2+y**2))/10)
+                    brightness = level
+                    self.objects[x][y]=GridSquare(height, DrawEngine.WorldPoly([DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size, self.tile_size/2+y*self.tile_size, height),
+                                                 DrawEngine.WorldPoint(-self.tile_size/2+x*self.tile_size,                self.tile_size/2+y*self.tile_size, height),
+                                                 DrawEngine.WorldPoint(-self.tile_size/2+x*self.tile_size,                -self.tile_size/2+y*self.tile_size, height), 
+                                                 DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size,  -self.tile_size/2+y*self.tile_size, height)]), brightness)
+
                 else:
-                    self.grid[x][y] = -100000
-                r = 170
-                g = 170
-                b = 170+self.grid[x][y]
-                self.objects[x][y] = (DrawEngine.WorldPoly([DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size, self.tile_size/2+y*self.tile_size, self.grid[x][y]),
-                                                 DrawEngine.WorldPoint(-self.tile_size/2+x*self.tile_size,                self.tile_size/2+y*self.tile_size, self.grid[x][y]),
-                                                 DrawEngine.WorldPoint(-self.tile_size/2+x*self.tile_size,                -self.tile_size/2+y*self.tile_size, self.grid[x][y]), 
-                                                 DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size,  -self.tile_size/2+y*self.tile_size, self.grid[x][y])], r, g, b))
+                    self.objects[x][y]=GridSquare(-100000)
+                
                 
     def grid_height(self,x,y):
         x = round(x/self.tile_size)
@@ -155,7 +176,13 @@ class WorldObjects():
         
         if not (x,y) in self.x_y_range():
             return -10000000.00
-        return self.grid[x][y]
+        return self.objects[x][y].height
+            
+    def get_item(self,x,y):
+        x = round(x/self.tile_size)
+        y = round(y/self.tile_size)
+        
+        return self.objects[x][y]
  
     def remove(self,object):
         self.objects.remove(object)
@@ -165,7 +192,7 @@ class WorldObjects():
         for x,y in self.x_y_range():
             list.append(self.objects[x][y])
         return list
-         
+
 def render_frame(canvas):
     canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Cyan')
     
@@ -175,7 +202,7 @@ def render_frame(canvas):
     canvas.draw_text('Runner', (75, 100), 24, 'Black')
     canvas.draw_text('Seeker', (WIDTH/2+100, 100), 24, 'Black')
     
-    render_objects = world_objects.to_list()
+    render_objects = grid.to_list()
     render_objects.append(player_a)
     render_objects.append(player_b)
     render_objects.append(player_a.shadow())
@@ -193,7 +220,7 @@ def update_world(time_delta):
     player_a.update(time_delta)
     player_b.update(time_delta)
     
-    world_objects.set_center(player_a[0], player_a[1])
+    grid.set_center(player_a[0], player_a[1])
     
     dx = player_b.x-player_a.x
     dy = player_b.y-player_a.y
@@ -285,9 +312,9 @@ WIDTH = 1200
 HEIGHT = 600
     
 def init():
-    global player_a, player_b, world_objects, left_camera, right_camera
+    global player_a, player_b, grid, left_camera, right_camera
     
-    world_objects = WorldObjects()
+    grid = Grid()
             
     player_a = WorldPlayer(0, 0, 255, 0, 0)
     player_b = WorldPlayer(0, 0, 0, 255, 0)
