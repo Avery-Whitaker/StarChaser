@@ -280,17 +280,23 @@ def render_frame(canvas):
     canvas.draw_text(text_left, (75, 200), 48, 'Black')
     canvas.draw_text(text_right, (WIDTH/2+100, 200), 48, 'Black')
     
-    canvas.draw_text('Runner          Score: ' + str(left_score), (75, 30), 24, 'White')
-    canvas.draw_text('Seeker          Score: ' + str(right_score), (WIDTH/2+100, 30), 24, 'White')
-    
+    if num_players == 2:
+        canvas.draw_text('Runner          Score: ' + str(left_score), (75, 30), 24, 'White')
+        canvas.draw_text('Seeker          Score: ' + str(right_score), (WIDTH/2+100, 30), 24, 'White')
+    else:
+        canvas.draw_text('Distance Time Trial      Distance: ' + str(int(math.sqrt( player_a.x**2 + player_a.y**2) )), (125, 30), 24, 'White')
+
     render_objects = grid.to_list()
     render_objects.append(player_a)
-    render_objects.append(player_b)
+    if num_players == 2:
+        render_objects.append(player_b)
     render_objects.append(player_a.shadow())
-    render_objects.append(player_b.shadow())
+    if num_players == 2:
+        render_objects.append(player_b.shadow())
     
     if not game_over:
-        right_camera.draw(canvas,render_objects)
+        if num_players == 2:
+            right_camera.draw(canvas,render_objects)
         left_camera.draw(canvas,render_objects)
     #canvas.draw_text('Avery Whitaker | This game still needs a name', (30, 50), 48, 'Red')
     
@@ -300,44 +306,53 @@ def update_world(time_delta):
     global game_over,text_left,text_right,left_score,right_score
     
     player_a.update(time_delta)
-    player_b.update(time_delta)
+    if num_players == 2:
+        player_b.update(time_delta)
     
     grid.set_center(player_a[0], player_a[1])
     grid.update(time_delta)
     
-    dx = player_b.x-player_a.x
-    dy = player_b.y-player_a.y
-    l = 1000
+    if num_players == 2:
+        dx = player_b.x-player_a.x
+        dy = player_b.y-player_a.y
+        l = 1000
+
+        L = math.sqrt( dx**2 + dy**2 )
+
+        if not game_over and player_b.z < -2000:
+            text_left = "You Win"
+            left_score += 1
+            game_over = True
+
+        if not game_over and player_a.z < -2000:
+            text_right = "You Win"
+            right_score += 1
+            game_over = True
+
+        if not game_over and L < 100:
+            text_right = "You Win"
+            right_score += 1
+            game_over = True
     
-    L = math.sqrt( dx**2 + dy**2 )
-    
-    if not game_over and player_b.z < -2000:
-        text_left = "You Win"
-        left_score += 1
-        game_over = True
+        angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, player_b)+math.pi
+        angle_b = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_b, player_a)
+
+        player_a.set_angle_xy(math.pi/2-angle_a)
+        player_b.set_angle_xy(math.pi/2-angle_b)
+
+        left_camera.set_angle_xy(player_a.angle_xy)
+        right_camera.set_angle_xy(player_b.angle_xy)
+
+        left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 500+player_a.z)
+        right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 500+player_b.z)
+    else:
+        angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, DrawEngine.WorldPoint(0,0,0))+math.pi
+        player_a.set_angle_xy(math.pi/2-angle_a)
+        left_camera.set_angle_xy(player_a.angle_xy)
+        l = 1000
+        left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 500+player_a.z)
         
-    if not game_over and player_a.z < -2000:
-        text_right = "You Win"
-        right_score += 1
-        game_over = True
-    
-    if not game_over and L < 100:
-        text_right = "You Win"
-        right_score += 1
-        game_over = True
-    
-    angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, player_b)+math.pi
-    angle_b = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_b, player_a)
-    
-    player_a.set_angle_xy(math.pi/2-angle_a)
-    player_b.set_angle_xy(math.pi/2-angle_b)
-
-    left_camera.set_angle_xy(player_a.angle_xy)
-    right_camera.set_angle_xy(player_b.angle_xy)
-
-    left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 500+player_a.z)
-    right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 500+player_b.z)
-
+        
 keys_down = {}
 for i in range(1,300):
     keys_down[i] = False
@@ -357,16 +372,16 @@ def keyup(k):
             
 def key_action(dt):    
     
-    if keys_down[simplegui.KEY_MAP["up"]]:
+    if keys_down[simplegui.KEY_MAP["up"]] and num_players == 2:
         player_b.forward(dt)
-    if keys_down[simplegui.KEY_MAP["down"]]:
+    if keys_down[simplegui.KEY_MAP["down"]] and num_players == 2:
         player_b.back(dt)
-    if keys_down[simplegui.KEY_MAP["left"]]:
+    if keys_down[simplegui.KEY_MAP["left"]] and num_players == 2:
         player_b.left(dt)
-    if keys_down[simplegui.KEY_MAP["right"]]:
+    if keys_down[simplegui.KEY_MAP["right"]] and num_players == 2:
         player_b.right(dt)
         
-    if keys_down[16]:
+    if keys_down[16] and num_players == 2:
         player_b.jump()
     
     if keys_down[simplegui.KEY_MAP["s"]]:
@@ -419,6 +434,8 @@ def game_loop(canvas):
 WIDTH = 1200
 HEIGHT = 600
 
+num_players = 2
+
 left_score = 0
 right_score = 0
     
@@ -428,21 +445,37 @@ def init():
     grid = Grid()
             
     player_a = WorldPlayer(500, 0, 255, 0, 0)
-    player_b = WorldPlayer(-500, 0, 0, 255, 0)
+    if num_players == 2:
+        player_b = WorldPlayer(-500, 0, 0, 255, 0)
 
-    left_camera = DrawEngine.Camera(0,0,0,  0,     0,       50,      WIDTH/2,      HEIGHT-50)
-    right_camera = DrawEngine.Camera(0,0,0,  0 , WIDTH/2 , 50,     WIDTH/2,      HEIGHT-50)
+    if num_players == 2:
+        left_camera = DrawEngine.Camera(0,0,0,  0,     0,       50,      WIDTH/2,      HEIGHT-50)
+        right_camera = DrawEngine.Camera(0,0,0,  0 , WIDTH/2 , 50,     WIDTH/2,      HEIGHT-50)
+    elif num_players == 1:
+        left_camera = DrawEngine.Camera(0,0,0,  0,     0,       50,      WIDTH,      HEIGHT-50)
+        
     
     game_over = False
     text_left = "You Lose!"
     text_right = "You Lose!"
+    
+def init_single():
+    global num_players
+    num_players = 1
+    init()
+    
+def init_multi():
+    global num_players
+    num_players = 2
+    init()
 
 frame = simplegui.create_frame("~", WIDTH, HEIGHT)
 frame.set_draw_handler(game_loop)
 frame.set_keydown_handler(keydown)
 frame.set_keyup_handler(keyup)
 
-reset_button = frame.add_button('Next Round', init)
+reset_button = frame.add_button('Multiplayer', init_multi)
+reset_button = frame.add_button('Single Player', init_single)
 
 init()
 
