@@ -136,7 +136,7 @@ class GridSquare:
         #3 - disapear
         
         type = 0
-        if random.random() > 0.7: #if special
+        if random.random() > 0.85: #if special
             type = random.randrange(1,4)
         
         self.bouncy = False
@@ -238,9 +238,12 @@ class Grid:
             if not self.objects.has_key(x):
                 self.objects[x] = {}
             if not self.objects[x].has_key(y):
-                if random.randrange(0,3) != 1:
-                    level = random.randrange(0,2)
-                    height = int(self.tile_size/0.5*int(level*0.5*math.sqrt(x**2+y**2))/10)
+                if random.random() > 0.2 + math.sqrt(x**2+y**2)/150:
+                    if x > -5 and y > -5 and x < 5 and y < 5:
+                        level = 0
+                    else:
+                        level = random.randrange(0,2)
+                    height = self.tile_size/4*level
                     brightness = level
                     self.objects[x][y]=GridSquare(height, DrawEngine.WorldPoly([DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size, self.tile_size/2+y*self.tile_size, height),
                                                  DrawEngine.WorldPoint(-self.tile_size/2+x*self.tile_size,                self.tile_size/2+y*self.tile_size, height),
@@ -394,9 +397,9 @@ def game_loop(canvas):
         fps= 1/avg_time
         #print "FPS: " + str(int(10/avg_time)/10)
         #print "GRID SIZE: " + str(grid.square_size**2)
-        if fps > 15:
+        if fps > 20:
             grid.square_size += 1
-        elif fps < 12:
+        elif fps < 15:
             if grid.square_size > 6:
                 grid.square_size -= 1
             else:
