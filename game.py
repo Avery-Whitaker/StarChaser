@@ -63,8 +63,8 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
              self.z += self.z_vel*time_delta
         elif self.z >= ground_z and self.z + self.z_vel*time_delta < ground_z:
             self.z = ground_z
-            if grid.get_item(self.x,self.y).bouncy():
-                self.z_vel = 800
+            if grid.get_item(self.x,self.y).is_bouncy():
+                self.z_vel = 1200
             else:
                 self.z_vel = 0
         else:
@@ -114,10 +114,19 @@ class GridSquare:
         self.world_poly = world_poly
         self.height = height
         
+        self.bouncy = False
+        if random.random() > 0.8:
+            self.bouncy = True
+        
         if self.world_poly is not None:
-            self.world_poly.color_r = 120+30*brightness
-            self.world_poly.color_g = 120+30*brightness
-            self.world_poly.color_b = 220+30*brightness
+            if self.bouncy:
+                self.world_poly.color_r = 220+30*brightness
+                self.world_poly.color_g = 120+30*brightness
+                self.world_poly.color_b = 120+30*brightness
+            else:
+                self.world_poly.color_r = 120+30*brightness
+                self.world_poly.color_g = 120+30*brightness
+                self.world_poly.color_b = 220+30*brightness
         
     def height(self):
         return self.height
@@ -127,8 +136,8 @@ class GridSquare:
             return None
         return self.world_poly.transform(camera)
     
-    def bouncy(self):
-        return True
+    def is_bouncy(self):
+        return self.bouncy
     
 class Grid:
     def __init__(self):
