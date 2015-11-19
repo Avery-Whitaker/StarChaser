@@ -111,6 +111,9 @@ class WorldPoly(Color):
     def __getitem__(self,key):
         return self.points[key]
     
+    def __len__(self):
+        return len(self.points)
+    
     def transform(self, camera):
             line_thinkness = 1
             points = []
