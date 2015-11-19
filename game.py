@@ -45,7 +45,7 @@ import simplegui
 import math
 import random
 import time
-import user40_vGEjZ00kyC_2 as DrawEngine
+import user40_vGEjZ00kyC_3 as DrawEngine
         
 class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def __init__(self,x,y,r,b,g):
@@ -59,23 +59,35 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         global grid
         ground_z = grid.grid_height(self.x,self.y)+self.radius
         
-        if self.z_vel >= 0:
+        moving_ground_z = grid.get_item(self.x,self.y).prev_height+self.radius
+        
+        if self.z_vel >= 0: #if going up
              self.z += self.z_vel*time_delta
-        elif self.z >= ground_z and self.z + self.z_vel*time_delta < ground_z:
+        elif self.z == ground_z or self.z == moving_ground_z: #if sitting on ground
+            self.z = ground_z
+            grid.get_item(self.x,self.y).stand_damage(time_delta)
+            self.z_vel = 0
+        elif self.z >= ground_z and self.z + self.z_vel*time_delta < ground_z: #if falling into ground
             self.z = ground_z
             if grid.get_item(self.x,self.y).is_bouncy():
                 self.z_vel = 1200
             else:
                 self.z_vel = 0
-        else:
+        else:#else falling into space
             self.z += self.z_vel*time_delta
         
         self.z_vel -= 1200*time_delta
         
     def jump(self):
         ground_z = grid.grid_height(self.x,self.y)+self.radius
-        if self.z == ground_z:
-            self.z_vel = 800
+        moving_ground_z = grid.get_item(self.x,self.y).prev_height+self.radius
+        if self.z == ground_z or self.z == moving_ground_z:
+            grid.get_item(self.x,self.y).jump_damage()
+                
+            if grid.get_item(self.x,self.y).is_bouncy():
+                self.z_vel = 1200
+            else:  
+                self.z_vel = 800
        
     def forward(self, dt):
         self.y += self.speed * dt * math.cos(self.angle_xy)
@@ -100,7 +112,7 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         shawdow_height = grid.grid_height(self.x,self.y)
         r = 250
         
-        if shawdow_height >= self.z-self.radius:
+        if shawdow_height >= self.z-self.radius*2:
             return None
         
         for i in range(0,n):
@@ -112,24 +124,85 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
 class GridSquare:
     def __init__(self, height, world_poly = None, brightness = 0):
         self.world_poly = world_poly
+        
         self.height = height
+        self.prev_height = -10000
+        
+        
+        #types of squares:
+        #0 - normal
+        #1 - bouncy
+        #2 - up/down
+        #3 - disapear
+        
+        type = 0
+        if random.random() > 0.7: #if special
+            type = random.randrange(1,4)
         
         self.bouncy = False
-        if random.random() > 0.8:
+        if type == 1:
             self.bouncy = True
+         
+        self.direction = 0
+        self.min_height = self.height-100
+        self.max_height = self.height+100
+        if type == 2:
+            self.direction = (random.randrange(0,2)*2)-1 #-1 or 1
+        
+        self.health = None
+        if type == 3:
+            self.health = 100
         
         if self.world_poly is not None:
-            if self.bouncy:
-                self.world_poly.color_r = 220+30*brightness
-                self.world_poly.color_g = 120+30*brightness
-                self.world_poly.color_b = 120+30*brightness
-            else:
-                self.world_poly.color_r = 120+30*brightness
-                self.world_poly.color_g = 120+30*brightness
-                self.world_poly.color_b = 220+30*brightness
+            if type == 0:
+                self.world_poly.color_r = 255
+                self.world_poly.color_g = 255
+                self.world_poly.color_b = 255
+            elif type == 1:
+                self.world_poly.color_r = 0
+                self.world_poly.color_g = 0
+                self.world_poly.color_b = 255
+            elif type == 2:
+                self.world_poly.color_r = 255
+                self.world_poly.color_g = 127
+                self.world_poly.color_b = 80
+            elif type == 3:
+                self.health_update()
+    
+    def update(self, time_delta):    
+        if self.direction != 0:
+            self.prev_height = self.height
+            
+            if self.height < self.min_height or self.height > self.max_height:
+                self.direction *= -1
+
+            self.height += 100*time_delta*self.direction
+
+            if self.world_poly is not None:
+                for i in range(0,len(self.world_poly)):
+                    self.world_poly[i].z = self.height
         
-    def height(self):
-        return self.height
+    def health_update(self):
+        if self.world_poly is not None:
+            self.world_poly.color_r = int(165*self.health*0.01)
+            self.world_poly.color_g = int(42*self.health*0.01)
+            self.world_poly.color_b = int(42*self.health*0.01)
+        
+        if self.health <= 0:
+            self.direction = -5
+            self.min_height = -100000
+        
+    def jump_damage(self):
+        if self.health is not None:
+            self.health -= 100
+            self.health_update()
+        
+    def stand_damage(self, delta_time):
+        if self.health is not None:
+            self.health -= delta_time*150
+            self.health_update()
+        
+        
         
     def transform(self,camera):
         if self.world_poly is None:
@@ -142,10 +215,9 @@ class GridSquare:
 class Grid:
     def __init__(self):
         self.objects = {}
-        #self.grid = {}
         
         self.tile_size = 400
-        self.square_size = 7
+        self.square_size = 8
         
         self.set_center(0,0)
         
@@ -178,6 +250,9 @@ class Grid:
                 else:
                     self.objects[x][y]=GridSquare(-100000)
                 
+    def update(self,time_delta):
+        for x,y in self.x_y_range():
+            self.objects[x][y].update(time_delta)
                 
     def grid_height(self,x,y):
         x = round(x/self.tile_size)
@@ -230,6 +305,7 @@ def update_world(time_delta):
     player_b.update(time_delta)
     
     grid.set_center(player_a[0], player_a[1])
+    grid.update(time_delta)
     
     dx = player_b.x-player_a.x
     dy = player_b.y-player_a.y
@@ -315,7 +391,16 @@ def game_loop(canvas):
     avg_time /= len(time_list)
     count+=1
     if count%20==0:
-        print "FPS: " + str(int(10/avg_time)/10)
+        fps= 1/avg_time
+        #print "FPS: " + str(int(10/avg_time)/10)
+        #print "GRID SIZE: " + str(grid.square_size**2)
+        if fps > 15:
+            grid.square_size += 1
+        elif fps < 12:
+            if grid.square_size > 6:
+                grid.square_size -= 1
+            else:
+                print "Warning: This computer is too slow!"
 
 WIDTH = 1200
 HEIGHT = 600
