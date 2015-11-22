@@ -329,19 +329,22 @@ def update_world(time_delta):
         L = math.sqrt( dx**2 + dy**2 )
 
         if player_b.z < -2000:
-            init_multi()
             left_score += 1
+            init_multi()
+            return
 
         if player_a.z < -2000:
-            init_multi()
             right_score += 1
+            init_multi()
+            return
 
         if  L < 100:
-            init_multi()
             right_score += 1
+            init_multi()
+            return
     
-        angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, player_b)+math.pi
-        angle_b = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_b, player_a)
+        angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, DrawEngine.WorldPoint(0,0,0))+math.pi
+        angle_b = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_b, DrawEngine.WorldPoint(0,0,0))+math.pi
 
         player_a.set_angle_xy(math.pi/2-angle_a)
         player_b.set_angle_xy(math.pi/2-angle_b)
@@ -373,6 +376,10 @@ def keydown(k):
     
     if k == simplegui.KEY_MAP["space"]:
         player_a.jump()
+        
+    if k == 27: #escape
+        init_menu()
+        
     if keys_down[45] or keys_down[16]:
         player_b.jump()
 
@@ -511,7 +518,7 @@ time_trial_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/
 
 r = 0   
 
-def pass_function(x):
+def pass_function(x=None):
     pass
 
 def menu_mouseclick(pos):
