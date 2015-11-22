@@ -1,3 +1,8 @@
+'''
+New version, renders things by z value! who
+cares about anything else!
+'''
+
 import math
 import user40_hIgQ2QMFUJ_1 as trim
 import random
@@ -64,18 +69,17 @@ class WorldPoint:
             scale = 1000000000000.0
         else:
             scale = camera.focalLength/z
-        return ScreenPoint(camera.vanishingPointX + x * abs(scale), camera.vanishingPointY + y * abs(scale), -scale)
+        return ScreenPoint(camera.vanishingPointX + x * abs(scale), camera.vanishingPointY + y * abs(scale), self.z, -scale)
     
 class WorldSphere(WorldPoint, Color):
-    def __init__(self, x, y, z, r, g, b, a):
+    def __init__(self, x, y, z, radius, r, g, b, a):
         WorldPoint.__init__(self, x, y, z)
         Color.__init__(self, r, g, b, a)
+        self.radius = radius
         
     def transform(self,camera):
         s = WorldPoint.transform(self,camera)
-        return ScreenCircle(s[0],s[1],s[2],self.color_r,self.color_g,self.color_b,self.color_a)
-    
-
+        return ScreenCircle(s[0],s[1],self.z,s.scale,self.radius,self.color_r,self.color_g,self.color_b,self.color_a)
 
 class Camera(WorldAngle, WorldPoint):
     def draw(self, canvas, world_objects):
@@ -128,15 +132,15 @@ class WorldPoly(Color):
             if maxScale > 0:
                 if minScale < 0:
                     trim.trimZero(points, 2, 3)
-                return ScreenPoly(points, self.color_r, self.color_g, self.color_b )
+                return ScreenPoly(points, self.points[0].z, self.color_r, self.color_g, self.color_b )
             return None
         
 class ScreenPoint:
-    def __init__(self,x,y,scale):
+    def __init__(self,x,y,world_z,scale):
         self.x = x
         self.y = y
+        self.world_z = world_z
         self.scale = scale
-        self.priority = scale
         
     def __getitem__(self,key):
         if key == 0:
@@ -146,50 +150,49 @@ class ScreenPoint:
         if key == 2:
             return self.scale
         if key < 0:
-            return self[key+3]
+            return self[key+2]
             
     def __cmp__(self, other):
-        if self.priority < other.priority:
+        if self.world_z < other.world_z:
             return -1
-        elif self.priority == other.priority:
+        elif self.world_z == other.world_z:
             return 0
         return 1
     
 class ScreenCircle(ScreenPoint, Color):
-    def __init__(self,x,y,scale,r,g,b,a):
-        ScreenPoint.__init__(self,x,y,scale)
+    def __init__(self,x,y,world_z,scale,radius, r,g,b,a):
+        ScreenPoint.__init__(self,x,y,world_z,scale)
         Color.__init__(self,r,g,b,a)
+        self.radius = radius
+        self.world_z = world_z
         
     def __cmp__(self, other):
-        if self.priority < other.priority:
+        if self.world_z < other.world_z:
             return -1
-        elif self.priority == other.priority:
+        elif self.world_z == other.world_z:
             return 0
         return 1
             
     def draw(self, canvas, camera):
         if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
-            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), 30 * self.scale, 1, self.rgba(), self.rgba())
+            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), self.radius * self.scale, 1, self.rgba(), self.rgba())
 
 class ScreenPoly:
-    def __init__(self, points, color_r, color_g, color_b):
+    def __init__(self, points, world_z, color_r, color_g, color_b):
         self.color_r = color_r
         self.color_g = color_g
         self.color_b = color_b
         
         self.points = points
-        self.priority = 0
-        for point in self.points:
-            self.priority += point[2]
-        self.priority /= len(self.points)
+        self.world_z = world_z
         
     def __getitem__(self,key):
         return list[key]
         
     def __cmp__(self, other):
-        if self.priority < other.priority:
+        if self.world_z < other.world_z:
             return -1
-        elif self.priority == other.priority:
+        elif self.world_z == other.world_z:
             return 0
         return 1
             
