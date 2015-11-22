@@ -203,7 +203,7 @@ class Camera(WorldAngle, WorldPoint):
     def draw(self, canvas, world_objects):
         global background_image
         
-        #self.background_index = int(math.sqrt(self.x**2 + self.y**2))/10
+        self.background_index = int(math.sqrt(self.x**2 + self.y**2))/10
         
         self.background_index += 2
         
@@ -269,7 +269,7 @@ class WorldPoly(Color):
             if maxScale > 0:
                 if minScale < 0:
                     trim_zero(points, 2, 3)
-                return ScreenPoly(points, self.points[0].z, self.color_r, self.color_g, self.color_b )
+                return ScreenPoly(points, self.points[0].z, self.color_r, self.color_g, self.color_b, self.color_a )
             return None
         
 class ScreenPoint:
@@ -315,10 +315,11 @@ class ScreenCircle(ScreenPoint, Color):
             canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), self.radius * self.scale, 1, self.rgba(), self.rgba())
 
 class ScreenPoly:
-    def __init__(self, points, world_z, color_r, color_g, color_b):
+    def __init__(self, points, world_z, color_r, color_g, color_b, color_a):
         self.color_r = color_r
         self.color_g = color_g
         self.color_b = color_b
+        self.color_a = color_a
         
         self.points = points
         self.world_z = world_z
@@ -352,6 +353,6 @@ class ScreenPoly:
                 maxY = point[1]
         if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
             poly_trim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height,camera.crop_left,camera.crop_right,camera.crop_top,camera.crop_bot)
-            canvas.draw_polygon(new, 1, "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")","rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")")
+            canvas.draw_polygon(new, 1, "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")","rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(self.color_a)+")")
 
         
