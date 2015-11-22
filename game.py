@@ -117,10 +117,10 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         
         prev_ground_z = grid.grid_height(prev_x,prev_y)+self.radius
         
-        moving_ground_z = grid.get_item(self.x,self.y).prev_height+self.radius
+        moving_ground_z = grid.grid_prev_height(self.x,self.y)+self.radius
         
         
-        if self.z == ground_z or self.z == moving_ground_z or (prev_z >= prev_ground_z and prev_z < self.radius/2+prev_ground_z):
+        if self.z == ground_z or self.z == moving_ground_z or (prev_z >= prev_ground_z and prev_z < self.radius/2+prev_ground_z) and grid.get_item(self.x,self.y) is not None:
             grid.get_item(self.x,self.y).jump_damage()
             self.prev_loc = []
             if grid.get_item(self.x,self.y).is_bouncy():
@@ -353,10 +353,12 @@ def render_frame(canvas):
     left_camera.draw(canvas,render_objects)
     
     if num_players == 2:
+        
+        
         canvas.draw_text(str(left_score), (30, 30), 24, 'White', "monospace")
         canvas.draw_text(str(right_score), (WIDTH-30, 30), 24, 'White', "monospace")
     else:
-        canvas.draw_text(str( int(1000*(50000-math.sqrt( player_a.x**2 + player_a.y**2)+500 )/50000) ), (600, 30), 24, 'White')
+        canvas.draw_text("Distance Remaining: " + str( int(1000*(50000-math.sqrt( player_a.x**2 + player_a.y**2)+500 )/50000) ), (600, 30), 24, 'White')
 
     
 def update_world(time_delta):
