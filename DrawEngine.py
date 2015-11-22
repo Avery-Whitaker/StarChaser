@@ -296,6 +296,10 @@ class ScreenPoint:
             return 0
         return 1
     
+player_image_a = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a.png")
+player_image_b = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b.png")
+rotate = 0
+    
 class ScreenCircle(ScreenPoint, Color):
     def __init__(self,x,y,world_z,scale,radius, r,g,b,a):
         ScreenPoint.__init__(self,x,y,world_z,scale)
@@ -311,8 +315,16 @@ class ScreenCircle(ScreenPoint, Color):
         return 1
             
     def draw(self, canvas, camera):
+        global rotate
+        
         if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
-            canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), self.radius * self.scale, 1, self.rgba(), self.rgba())
+            if self.color_b == 255:
+                rotate += 0.05
+                canvas.draw_image(player_image_a, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+            else:
+                canvas.draw_image(player_image_b, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+            
+            #canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), self.radius * self.scale, 1, self.rgba(), self.rgba())
 
 class ScreenPoly:
     def __init__(self, points, world_z, color_r, color_g, color_b, color_a):

@@ -53,12 +53,12 @@ import simplegui
 import math
 import random
 import time
-import user40_sh0DNBiS2W_72 as DrawEngine
+import user40_sh0DNBiS2W_82 as DrawEngine
 import codeskulptor
     
 class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def __init__(self,x,y,r,b,g):
-        DrawEngine.WorldSphere.__init__(self, x, y, 600, 30, r,b,g,1)
+        DrawEngine.WorldSphere.__init__(self, x, y, 600, 30, r,g,b,1)
         DrawEngine.WorldAngle.__init__(self, 0)
         self.z_vel = 20
         self.radius = 30
@@ -83,7 +83,8 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         
         ground_z = grid.grid_height(self.x,self.y)+self.radius
         
-        moving_ground_z = grid.get_item(self.x,self.y).prev_height+self.radius
+        
+        moving_ground_z = grid.grid_prev_height(self.x,self.y)+self.radius
         
         if self.z_vel >= 0: #if going up
              self.z += self.z_vel*time_delta
@@ -316,9 +317,19 @@ class Grid:
         if not (x,y) in self.x_y_range():
             return -10000000.00
         return self.objects[x][y].height
+    
+    def grid_prev_height(self,x,y):
+        x = round(x/self.tile_size)
+        y = round(y/self.tile_size)
+        if not (x,y) in self.x_y_range():
+            return -10000000.00
+        return self.objects[x][y].prev_height
             
     def get_item(self,x,y):
-        return self.objects[round(x/self.tile_size)][round(y/self.tile_size)]
+        x = round(x/self.tile_size)
+        y = round(y/self.tile_size)
+        if (x,y) in self.x_y_range():
+            return self.objects[x][y]
        
     def to_list(self):
         list = []
@@ -530,7 +541,7 @@ def init():
     
     grid = Grid()
     
-    player_a = WorldPlayer(3000, 0, 255, 0, 0)
+    player_a = WorldPlayer(3000, 255, 0, 0, 0)
     if num_players == 2:
         player_b = WorldPlayer(2500, 0, 0, 255, 0)
 
