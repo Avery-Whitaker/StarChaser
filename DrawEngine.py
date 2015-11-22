@@ -6,6 +6,7 @@ cares about anything else!
 import math
 import user40_hIgQ2QMFUJ_1 as trim
 import random
+import simplegui
 
 class WorldAngle:
     def __init__(self, angle_xy):
@@ -81,10 +82,31 @@ class WorldSphere(WorldPoint, Color):
         s = WorldPoint.transform(self,camera)
         return ScreenCircle(s[0],s[1],self.z,s.scale,self.radius,self.color_r,self.color_g,self.color_b,self.color_a)
 
+#background_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background%20(11-21-2015%208-13-11%20PM)/background%20001.jpg"))
+
+background_image = []
+for i in range(1,300):
+    s = str(i)
+    while(len(s) < 3):
+        s = '0'+s
+    background_image.append(simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background/background%20"+s+".png"))
+    
 class Camera(WorldAngle, WorldPoint):
+    
     def draw(self, canvas, world_objects):
-        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 1, 'White','Grey')
-            
+        global background_image
+        
+        self.background_index = int(math.sqrt(self.x**2 + self.y**2))/10
+        #self.background_index += 2
+        
+        while self.background_index <= 0:
+            self.background_index += 298
+        while self.background_index >= 299:
+            self.background_index -= 298
+        
+        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 1, 'White')
+        canvas.draw_image(background_image[self.background_index], (1280/2,720/2), (1280,720), (self.screen_x+self.screen_width/2, self.screen_y+self.screen_height/2), (self.screen_width,self.screen_height))
+    
         list = []
         for a in world_objects:
             if a is not None:
@@ -98,7 +120,7 @@ class Camera(WorldAngle, WorldPoint):
         canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 2, 'White')
            
     def __init__(self, x, y, z, yAngle, screen_x, screen_y, screen_width, screen_height):
-        WorldPoint.__init__(self, x,y,z)
+        WorldPoint.__init__(self, x, y, z)
         WorldAngle.__init__(self, yAngle)
         self.screen_x = screen_x
         self.screen_y = screen_y
@@ -106,6 +128,8 @@ class Camera(WorldAngle, WorldPoint):
         self.screen_height = screen_height
         self.focalLength = 300.0
         self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
+        
+        self.background_index = 1
     
 class WorldPoly(Color):
     def __init__(self,points, r = random.randrange(70,100), g = random.randrange(200,255), b = random.randrange(70,100), a = 1):

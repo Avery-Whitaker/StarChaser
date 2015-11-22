@@ -53,7 +53,7 @@ import simplegui
 import math
 import random
 import time
-import user40_sh0DNBiS2W_13 as DrawEngine
+import user40_sh0DNBiS2W_34 as DrawEngine
         
 class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def __init__(self,x,y,r,b,g):
@@ -409,10 +409,17 @@ count = 0
 prev_time = time.time()
     
 def game_loop(canvas):
-    global count, prev_time
+    global count, prev_time,music_restart_time
     dt = time.time() - prev_time
     prev_time = time.time()
     
+    #handle music
+    if prev_time > music_restart_time:
+        game_music_intro.rewind()
+        game_music.rewind()
+        game_music.play()
+        music_restart_time = prev_time + 42.6634
+        
     ##main Stuff
     update_world(dt)
     render_frame(canvas)
@@ -438,6 +445,7 @@ def game_loop(canvas):
                 grid.square_size -= 1
             else:
                 print "Warning: This computer is too slow!"
+                
 
 WIDTH = 1200
 HEIGHT = 600
@@ -468,26 +476,51 @@ def init():
     text_right = "You Lose!"
     
 def init_single():
-    global num_players
+    global num_players, frame,music_restart_time
+    
+    menu_music.rewind()
+    game_music_intro.play()
+    music_restart_time = time.time() + 125.478
+    
+    frame.set_draw_handler(game_loop)
     num_players = 1
     init()
+
     
 def init_multi():
-    global num_players
+    global num_players, frame,music_restart_time
+    
+    menu_music.rewind()
+    game_music_intro.play()
+    music_restart_time = time.time() + 125.478
+    
+    frame.set_draw_handler(game_loop)
     num_players = 2
     init()
+    
+def menu_handler(canvas):
+    menu_music.play()
+    game_music.rewind()
+    game_music_intro.rewind()
+    #booting
+    pass
 
 frame = simplegui.create_frame("~", WIDTH, HEIGHT)
-frame.set_draw_handler(game_loop)
+frame.set_draw_handler(menu_handler)
 frame.set_keydown_handler(keydown)
 frame.set_keyup_handler(keyup)
 
 reset_button = frame.add_button('Multiplayer', init_multi)
 reset_button = frame.add_button('Single Player', init_single)
 
-init()
-
 frame.start()
+
+menu_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/menu.ogg")
+game_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_music_loop.ogg")
+game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_intro.ogg")
+menu_music.set_volume(0.6)
+game_music.set_volume(0.6)
+game_music_intro.set_volume(0.6)
 
 '''
 Game State:
