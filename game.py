@@ -54,7 +54,8 @@ import math
 import random
 import time
 import user40_sh0DNBiS2W_72 as DrawEngine
-        
+import codeskulptor
+    
 class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def __init__(self,x,y,r,b,g):
         DrawEngine.WorldSphere.__init__(self, x, y, 600, 30, r,b,g,1)
@@ -304,9 +305,6 @@ class Grid:
                 else:
                     self.objects[x][y]=GridSquare(-100000, x, y)
          
-        #TEMPORARY OH SO TEMPORARY
-        if self.objects[self.center_tile_x][self.center_tile_y].world_poly is not None:        
-            self.objects[self.center_tile_x][self.center_tile_y].world_poly.color_a=0
                 
     def update(self,time_delta):
         for x,y in self.x_y_range():
@@ -404,8 +402,8 @@ def update_world(time_delta):
         left_camera.set_angle_xy(player_a.angle_xy)
         right_camera.set_angle_xy(player_b.angle_xy)
 
-        left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 500+player_a.z)
-        right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 500+player_b.z)
+        left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/4, 500+player_a.z)
+        right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/4, 500+player_b.z)
     else:
         if player_a.z < -2000:
             init_single()
@@ -415,7 +413,7 @@ def update_world(time_delta):
         player_a.set_angle_xy(math.pi/2-angle_a)
         left_camera.set_angle_xy(player_a.angle_xy)
         l = 1000
-        left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 500+player_a.z)
+        left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/4, 500+player_a.z)
         
         
 keys_down = {}
@@ -649,8 +647,28 @@ def menu_handler(canvas):
         canvas.draw_image(time_trial_image_down, ( 593/2, 168/2), ( 593, 168), (6*WIDTH/7-100,HEIGHT-100), (300,150))
     
     #booting
+        
+blinker_counter = 0
+    
+def loading_handler(canvas):
+    global blinker_counter
+    blinker_counter+=1
+        
+    canvas.draw_text('System Booting', (0, 30), 24, 'Gray', 'monospace')
 
+    
+    if (blinker_counter/50)%2==0:
+        canvas.draw_text('Loading Assets...', (0, 82), 24, 'Gray', 'monospace')
+    
+    codeskulptor.set_timeout(600)
+
+    if time_trial_image_down.get_height() != 0:
+        init_menu()
+        codeskulptor.set_timeout(2)
+
+    
 frame = simplegui.create_frame("~", WIDTH, HEIGHT)
+frame.set_draw_handler(loading_handler)
 
 #reset_button = frame.add_button('Multiplayer', init_multi)
 #reset_button = frame.add_button('Single Player', init_single)
@@ -665,7 +683,7 @@ menu_music.set_volume(0.6)
 game_music.set_volume(0.6)
 game_music_intro.set_volume(0.6)
 
-init_menu()
+
 
 '''
 Game State:
