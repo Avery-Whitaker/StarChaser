@@ -50,6 +50,10 @@ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 '''
 
 import simplegui
+
+loading_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading.png")
+loading_blank_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_blank.png")
+
 import math
 import random
 import time
@@ -362,7 +366,7 @@ def render_frame(canvas):
 
     
 def update_world(time_delta):
-    global left_score,right_score
+    global left_score,right_score,running_player
     
     if num_players == 2:
     
@@ -372,7 +376,11 @@ def update_world(time_delta):
         
         #angle_temp = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, player_b)+math.pi
         #grid.set_center(player_b[0]+math.cos(angle_temp)*0.666*L, player_b[1]+math.sin(angle_temp)*0.666*L)
-        grid.set_center(player_a[0], player_a[1])
+        
+        if running_player == 0:
+            grid.set_center(player_a[0], player_a[1])
+        else:
+            grid.set_center(player_b[0], player_b[1])
     else:
         angle_temp = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, DrawEngine.WorldPoint(0,0,0))+math.pi
         
@@ -402,7 +410,10 @@ def update_world(time_delta):
             return
 
         if  L < 100:
-            right_score += 1
+            if running_player == 1:
+                right_score += 1
+            else:
+                left_score += 1
             init_multi()
             return
     
@@ -527,10 +538,14 @@ num_players = 2
 left_score = 0
 right_score = 0
     
+    
 def init():
     global player_a, player_b, grid, left_camera, right_camera, music_restart_time
 
+
     menu_music.rewind()
+    game_music_intro.rewind()
+    game_music.rewind()
     game_music_intro.play()
     music_restart_time = time.time() + 125.478
     
@@ -546,6 +561,11 @@ def init():
     player_a = WorldPlayer(3000, 255, 0, 0, 0)
     if num_players == 2:
         player_b = WorldPlayer(2500, 0, 0, 255, 0)
+        
+        if running_player == 1:
+            temp = player_b
+            player_b = player_a
+            player_a = temp
 
     if num_players == 2:
         left_camera = DrawEngine.Camera(0,0,0,  0,     0,       0,      WIDTH/2,      HEIGHT, False, True, False, False)
@@ -561,8 +581,9 @@ def init_single():
     init()
 
 def init_multi():
-    global num_players
+    global num_players, running_player
     
+    running_player = random.randrange(0,2)
     num_players = 2
     init()
     
@@ -665,16 +686,14 @@ blinker_counter = 0
     
 def loading_handler(canvas):
     global blinker_counter
-    blinker_counter+=1
-        
-    canvas.draw_text('System Booting', (0, 30), 24, 'Gray', 'monospace')
+    blinker_counter+=0.01
+ 
+    if int(blinker_counter)%2==0:
+        canvas.draw_image(loading_image, ( 600/2, 400/2), ( 600, 400), (WIDTH/2,HEIGHT/2), (WIDTH,HEIGHT))
+    else:
+        canvas.draw_image(loading_blank_image, ( 600/2, 400/2), ( 600, 400), (WIDTH/2,HEIGHT/2), (WIDTH,HEIGHT))
 
     
-    if (blinker_counter/50)%2==0:
-        canvas.draw_text('Loading Assets...', (0, 82), 24, 'Gray', 'monospace')
-    
-    codeskulptor.set_timeout(600)
-
     if time_trial_image_down.get_height() != 0:
         init_menu()
         codeskulptor.set_timeout(2)
