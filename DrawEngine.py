@@ -4,9 +4,115 @@ cares about anything else!
 '''
 
 import math
-import user40_hIgQ2QMFUJ_1 as trim
 import random
 import simplegui
+
+#in: list of points
+##########################################################################################
+def trimZero(points, axis, axis_n):
+    
+        #stolen from internet https://paolocrosetto.wordpress.com/python-code/
+        #works like magic
+        #I claim no rights to this function
+        def check_convexity(p):
+            #this checks the sign of a number
+            def sign(x):
+                if x >= 0: 
+                    return 1
+                else: 
+                    return 0
+            #this defines triples of subsequent vertexes on any polygon
+            def triads(p):
+                return zip(p, p[1:]+[p[0]], p[2:]+[p[0]]+[p[1]])
+            #this uss Bastian's three-vertex function to check convexity
+            i = 0
+            for ((x0, y0), (x1, y1), (x2,y2)) in triads(p):
+                if i==0: fsign = sign(x2*(y1-y0)-y2*(x1-x0)+(x1-x0)*y0-(y1-y0)*x0)
+                else:
+                    newsign = sign(x2*(y1-y0)-y2*(x1-x0)+(x1-x0)*y0-(y1-y0)*x0)
+                    if newsign != fsign: return False
+                i +=1
+            return True
+            
+        #point on line from point_a to point_b where axis = 0
+        def intersection(point_a, point_b, axis, axis_n):
+            new_point = []
+            for i in range(0,axis_n):
+                new_point.append(0)
+            if axis_n == 3:       
+                #new_point[axis-2] = (max(point_a[axis-2],point_b[axis-2])-min(point_b[axis-2],point_a[axis-2]))*max(point_b[axis],point_a[axis]) / ( abs(point_b[axis])+abs(point_a[axis])) + min(point_b[axis-2],point_a[axis-2])
+                #new_point[axis-1] = (max(point_a[axis-1],point_b[axis-1])-min(point_b[axis-1],point_a[axis-1]))*(max(point_b[axis],point_a[axis])/( abs(point_b[axis])+abs(point_a[axis])))+min(point_b[axis-1],point_a[axis-1])
+                new_point[axis-2] = (-(point_b[axis-2]-point_a[axis-2])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-2]
+                new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
+                new_point[axis] = 0
+                return [new_point[0],new_point[1],new_point[2]]
+            if axis_n == 2:
+                new_point[axis] = 0
+                new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
+                return [new_point[0],new_point[1]]
+        
+        min_num = 1000000000000
+        max_num = -1000000000000
+        for point in points:
+            if point[axis] < min_num:
+                min_num = point[axis]
+            if point[axis] > max_num:
+                max_num = point[axis]
+                
+        if min_num < 0 and max_num > 0:
+            i = 0
+            while points[i][axis] < 0:
+                i = (i+1)%len(points)
+            while points[i][axis] > 0:
+                i = (i+1)%len(points)
+
+            point_a = intersection(points[i],points[i-1],axis,axis_n)
+
+            cut_start = i
+            while points[i][axis] <= 0:
+                i = (i+1)%len(points)
+            point_b = intersection(points[i],points[i-1],axis,axis_n)
+            cut_end = i
+            if cut_start > cut_end:
+                for  i in range(cut_start,len(points)):
+                    points.pop(cut_start)
+                for  i in range(0,cut_end):
+                    points.pop(0)
+            else:
+                for i in range(cut_start,cut_end):
+                    points.pop(cut_start)
+            
+            points.insert(cut_start,point_b)
+            points.insert(cut_start,point_a)
+            
+            if not check_convexity(points):
+                points.remove(point_a)
+                points.remove(point_b)
+                points.insert(cut_start,point_a)
+                points.insert(cut_start,point_b)
+
+    #can optimize by not running for edges of screen
+def trimAxis(points, min, max, axis, trim_min, trim_max):
+    if trim_min:
+        if min != 0:
+            for point in points:
+                point[axis] -= min
+        trimZero(points, axis, 2)
+            for point in points:
+                point[axis] += min
+                
+    if trim_max:
+        for point in points:
+            point[axis] = -(point[axis] - max)
+        trimZero(points, axis, 2)
+        for point in points:
+            point[axis] = -point[axis] + max
+        
+#mutates points_list
+#trims polygon to be in rectangle defined by xMin, xMax yMin, yMax
+def polyTrim(points, xMin, xMax, yMin, yMax, crop_left, crop_right, crop_top, crop_bot):        
+    trimAxis(points_list, xMin, xMax, 0, 2, crop_left, crop_right)
+    trimAxis(points_list, yMin, yMax, 1, 2, crop_top, crop_bot)
 
 class WorldAngle:
     def __init__(self, angle_xy):
@@ -96,17 +202,18 @@ class Camera(WorldAngle, WorldPoint):
     def draw(self, canvas, world_objects):
         global background_image
         
-        self.background_index = int(math.sqrt(self.x**2 + self.y**2))/10
-        #self.background_index += 2
+        #self.background_index = int(math.sqrt(self.x**2 + self.y**2))/10
+        
+        self.background_index += 2
         
         while self.background_index <= 0:
             self.background_index += 298
         while self.background_index >= 299:
             self.background_index -= 298
         
-        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 1, 'White')
         canvas.draw_image(background_image[self.background_index], (1280/2,720/2), (1280,720), (self.screen_x+self.screen_width/2, self.screen_y+self.screen_height/2), (self.screen_width,self.screen_height))
-    
+        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 1, 'Black', "rgba(0,0,0,0.6)")
+        
         list = []
         for a in world_objects:
             if a is not None:
@@ -117,9 +224,9 @@ class Camera(WorldAngle, WorldPoint):
         for twoDPoly in list:
             twoDPoly.draw(canvas, self)
         
-        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 2, 'White')
+        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 2, 'Black')
            
-    def __init__(self, x, y, z, yAngle, screen_x, screen_y, screen_width, screen_height):
+    def __init__(self, x, y, z, yAngle, screen_x, screen_y, screen_width, screen_height, crop_left, crop_right, crop_top, crop_bot):
         WorldPoint.__init__(self, x, y, z)
         WorldAngle.__init__(self, yAngle)
         self.screen_x = screen_x
@@ -127,7 +234,12 @@ class Camera(WorldAngle, WorldPoint):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.focalLength = 300.0
-        self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.0
+        self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.5
+        
+        self.crop_left = crop_left
+        self.crop_right = crop_right
+        self.crop_top = crop_top
+        self.crop_bot = crop_bot
         
         self.background_index = 1
     
@@ -155,7 +267,7 @@ class WorldPoly(Color):
                     minScale = points[len(points)-1][2]
             if maxScale > 0:
                 if minScale < 0:
-                    trim.trimZero(points, 2, 3)
+                    trimZero(points, 2, 3)
                 return ScreenPoly(points, self.points[0].z, self.color_r, self.color_g, self.color_b )
             return None
         
@@ -238,6 +350,7 @@ class ScreenPoly:
             if point[1] > maxY:
                 maxY = point[1]
         if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
-            trim.polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height)
-            canvas.draw_polygon(new, 1, 'rgba(200,200,255,1)',"rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(0.8)+")")
-            
+            polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height,self.crop_left,self.crop_right,self.crop_top,self.crop_bot)
+            canvas.draw_polygon(new, 1, "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")","rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")")
+
+        

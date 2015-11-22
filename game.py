@@ -53,7 +53,7 @@ import simplegui
 import math
 import random
 import time
-import user40_sh0DNBiS2W_45 as DrawEngine
+import user40_sh0DNBiS2W_57 as DrawEngine
         
 class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def __init__(self,x,y,r,b,g):
@@ -283,16 +283,8 @@ class Grid:
 def render_frame(canvas):
     global game_over, left_score, right_score
     
-    canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Green')
+    #canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Black')
     
-    canvas.draw_text(text_left, (75, 200), 48, 'Black')
-    canvas.draw_text(text_right, (WIDTH/2+100, 200), 48, 'Black')
-    
-    if num_players == 2:
-        canvas.draw_text('Runner          Score: ' + str(left_score), (75, 30), 24, 'White')
-        canvas.draw_text('Seeker          Score: ' + str(right_score), (WIDTH/2+100, 30), 24, 'White')
-    else:
-        canvas.draw_text('Distance Time Trial      Distance: ' + str(int(math.sqrt( player_a.x**2 + player_a.y**2) )), (125, 30), 24, 'White')
 
     render_objects = grid.to_list()
     render_objects.append(player_a)
@@ -302,16 +294,19 @@ def render_frame(canvas):
     if num_players == 2:
         render_objects.append(player_b.shadow())
     
-    if not game_over:
-        if num_players == 2:
-            right_camera.draw(canvas,render_objects)
-        left_camera.draw(canvas,render_objects)
-    #canvas.draw_text('Avery Whitaker | This game still needs a name', (30, 50), 48, 'Red')
+    if num_players == 2:
+        right_camera.draw(canvas,render_objects)
+    left_camera.draw(canvas,render_objects)
     
+    if num_players == 2:
+        canvas.draw_text('Runner          Score: ' + str(left_score), (75, 30), 24, 'White')
+        canvas.draw_text('Seeker          Score: ' + str(right_score), (WIDTH/2+100, 30), 24, 'White')
+    else:
+        canvas.draw_text('Distance: ' + str(int(math.sqrt( player_a.x**2 + player_a.y**2)-500 )), (400, 30), 24, 'White')
 
     
 def update_world(time_delta):
-    global game_over,text_left,text_right,left_score,right_score
+    global left_score,right_score
     
     player_a.update(time_delta)
     if num_players == 2:
@@ -327,20 +322,17 @@ def update_world(time_delta):
 
         L = math.sqrt( dx**2 + dy**2 )
 
-        if not game_over and player_b.z < -2000:
-            text_left = "You Win"
+        if player_b.z < -2000:
+            init_multi()
             left_score += 1
-            game_over = True
 
-        if not game_over and player_a.z < -2000:
-            text_right = "You Win"
+        if player_a.z < -2000:
+            init_multi()
             right_score += 1
-            game_over = True
 
-        if not game_over and L < 100:
-            text_right = "You Win"
+        if  L < 100:
+            init_multi()
             right_score += 1
-            game_over = True
     
         angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, player_b)+math.pi
         angle_b = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_b, player_a)
@@ -354,6 +346,9 @@ def update_world(time_delta):
         left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/2, 500+player_a.z)
         right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/2, 500+player_b.z)
     else:
+        if player_a.z < -2000:
+            init_single()
+            
         angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, DrawEngine.WorldPoint(0,0,0))+math.pi
         player_a.set_angle_xy(math.pi/2-angle_a)
         left_camera.set_angle_xy(player_a.angle_xy)
@@ -371,7 +366,7 @@ def keydown(k):
     
     if k == simplegui.KEY_MAP["space"]:
         player_a.jump()
-    if keys_down[16]:
+    if keys_down[45] or keys_down[16]:
         player_b.jump()
 
 def keyup(k):
@@ -389,7 +384,7 @@ def key_action(dt):
     if keys_down[simplegui.KEY_MAP["right"]] and num_players == 2:
         player_b.right(dt)
         
-    if keys_down[16] and num_players == 2:
+    if keys_down[45] or keys_down[16] and num_players == 2:
         player_b.jump()
     
     if keys_down[simplegui.KEY_MAP["s"]]:
@@ -456,7 +451,7 @@ left_score = 0
 right_score = 0
     
 def init():
-    global player_a, player_b, grid, left_camera, right_camera, game_over, text_left, text_right, music_restart_time
+    global player_a, player_b, grid, left_camera, right_camera, music_restart_time
 
     menu_music.rewind()
     game_music_intro.play()
@@ -476,14 +471,11 @@ def init():
         player_b = WorldPlayer(-500, 0, 0, 255, 0)
 
     if num_players == 2:
-        left_camera = DrawEngine.Camera(0,0,0,  0,     0,       50,      WIDTH/2,      HEIGHT-50)
-        right_camera = DrawEngine.Camera(0,0,0,  0 , WIDTH/2 , 50,     WIDTH/2,      HEIGHT-50)
+        left_camera = DrawEngine.Camera(0,0,0,  0,     0,       0,      WIDTH/2,      HEIGHT, False, True, False, False)
+        right_camera = DrawEngine.Camera(0,0,0,  0 , WIDTH/2 , 0,     WIDTH/2,      HEIGHT, True, False, False, False)
     elif num_players == 1:
-        left_camera = DrawEngine.Camera(0,0,0,  0,     0,       50,      WIDTH,      HEIGHT-50)
+        left_camera = DrawEngine.Camera(0,0,0,  0,     0,       0,      WIDTH,      HEIGHT, False, False, False, False)
         
-    game_over = False
-    text_left = "You Lose!"
-    text_right = "You Lose!"
     
 def init_single():
     global num_players
@@ -499,7 +491,9 @@ def init_multi():
     
 logo_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/logo.png")
 background_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background_round.png")
-  
+subtitle_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/subtitle.png")
+ 
+    
 how_to_play_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/how_to_play.png")
 chase_mode_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/chase_mode.png")
 time_trial_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/time_trial.png")
@@ -521,7 +515,8 @@ def menu_mouseclick(pos):
     time_trial_pressed = False
     
     if pos[0] > 2*WIDTH/7-100-150 and pos[0] < 2*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
-        init_help()
+        print "this feature is not yet implamented!"
+        init_help() 
     if pos[0] > 4*WIDTH/7-100-150 and pos[0] < 4*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
         init_multi()
     if pos[0] > 6*WIDTH/7-100-150 and pos[0] < 6*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
@@ -564,6 +559,7 @@ def menu_handler(canvas):
     r += 0.001
     canvas.draw_image(background_image, ( 705/2, 718/2), ( 705, 718), (WIDTH/2, HEIGHT/2), (HEIGHT*2.5,2.5*HEIGHT), r)
     canvas.draw_image(logo_image, ( 1634/2, 266/2), ( 1634, 266), (WIDTH/2, HEIGHT/6), (1634/2,266/2))
+    canvas.draw_image(subtitle_image, ( 1733/2, 80/2), ( 1733, 80), (WIDTH/2, HEIGHT/3), (1733/2,80/2))
     
     if not how_to_play_pressed:
         canvas.draw_image(how_to_play_image, ( 695/2, 168/2), ( 695, 168), (2*WIDTH/7-100,HEIGHT-100), (300,150))
