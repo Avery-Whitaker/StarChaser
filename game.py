@@ -53,7 +53,7 @@ import simplegui
 import math
 import random
 import time
-import user40_sh0DNBiS2W_34 as DrawEngine
+import user40_sh0DNBiS2W_45 as DrawEngine
         
 class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def __init__(self,x,y,r,b,g):
@@ -456,7 +456,18 @@ left_score = 0
 right_score = 0
     
 def init():
-    global player_a, player_b, grid, left_camera, right_camera, game_over, text_left, text_right
+    global player_a, player_b, grid, left_camera, right_camera, game_over, text_left, text_right, music_restart_time
+
+    menu_music.rewind()
+    game_music_intro.play()
+    music_restart_time = time.time() + 125.478
+    
+    frame.set_draw_handler(game_loop)
+    
+    frame.set_keydown_handler(keydown)
+    frame.set_keyup_handler(keyup)
+    frame.set_mouseclick_handler(pass_function)
+    frame.set_mousedrag_handler(pass_function)
     
     grid = Grid()
             
@@ -470,48 +481,112 @@ def init():
     elif num_players == 1:
         left_camera = DrawEngine.Camera(0,0,0,  0,     0,       50,      WIDTH,      HEIGHT-50)
         
-    
     game_over = False
     text_left = "You Lose!"
     text_right = "You Lose!"
     
 def init_single():
-    global num_players, frame,music_restart_time
+    global num_players
     
-    menu_music.rewind()
-    game_music_intro.play()
-    music_restart_time = time.time() + 125.478
-    
-    frame.set_draw_handler(game_loop)
     num_players = 1
     init()
 
-    
 def init_multi():
-    global num_players, frame,music_restart_time
+    global num_players
     
-    menu_music.rewind()
-    game_music_intro.play()
-    music_restart_time = time.time() + 125.478
-    
-    frame.set_draw_handler(game_loop)
     num_players = 2
     init()
     
-def menu_handler(canvas):
+logo_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/logo.png")
+background_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background_round.png")
+  
+how_to_play_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/how_to_play.png")
+chase_mode_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/chase_mode.png")
+time_trial_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/time_trial.png")
+
+how_to_play_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/how_to_play_pressed.png")
+chase_mode_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/chase_mode_pressed.png")
+time_trial_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/time_trial_pressed.png")
+
+r = 0   
+
+def pass_function(x):
+    pass
+
+def menu_mouseclick(pos):
+    global how_to_play_pressed, chase_mode_pressed, time_trial_pressed
+    
+    how_to_play_pressed = False
+    chase_mode_pressed = False
+    time_trial_pressed = False
+    
+    if pos[0] > 2*WIDTH/7-100-150 and pos[0] < 2*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
+        init_help()
+    if pos[0] > 4*WIDTH/7-100-150 and pos[0] < 4*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
+        init_multi()
+    if pos[0] > 6*WIDTH/7-100-150 and pos[0] < 6*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
+        init_single()
+
+def menu_mousedrag(pos):
+    global how_to_play_pressed, chase_mode_pressed, time_trial_pressed
+    
+    how_to_play_pressed = False
+    chase_mode_pressed = False
+    time_trial_pressed = False
+    
+    if pos[0] > 2*WIDTH/7-100-150 and pos[0] < 2*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
+        how_to_play_pressed = True
+    if pos[0] > 4*WIDTH/7-100-150 and pos[0] < 4*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
+        chase_mode_pressed = True
+    if pos[0] > 6*WIDTH/7-100-150 and pos[0] < 6*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
+        time_trial_pressed = True
+    
+def init_menu():
+    global how_to_play_pressed, chase_mode_pressed, time_trial_pressed
+    
+    how_to_play_pressed = False
+    chase_mode_pressed = False
+    time_trial_pressed = False
+    
+    frame.set_keydown_handler(pass_function)
+    frame.set_keyup_handler(pass_function)
+    frame.set_draw_handler(menu_handler)
+    
+    frame.set_mouseclick_handler(menu_mouseclick)
+    frame.set_mousedrag_handler(menu_mousedrag)
+
     menu_music.play()
     game_music.rewind()
     game_music_intro.rewind()
+    
+def menu_handler(canvas):
+    global background_image, r, how_to_play_pressed, chase_mode_pressed, time_trial_pressed
+    r += 0.001
+    canvas.draw_image(background_image, ( 705/2, 718/2), ( 705, 718), (WIDTH/2, HEIGHT/2), (HEIGHT*2.5,2.5*HEIGHT), r)
+    canvas.draw_image(logo_image, ( 1634/2, 266/2), ( 1634, 266), (WIDTH/2, HEIGHT/6), (1634/2,266/2))
+    
+    if not how_to_play_pressed:
+        canvas.draw_image(how_to_play_image, ( 695/2, 168/2), ( 695, 168), (2*WIDTH/7-100,HEIGHT-100), (300,150))
+    else:
+        canvas.draw_image(how_to_play_image_down, ( 695/2, 168/2), ( 695, 168), (2*WIDTH/7-100,HEIGHT-100), (300,150))
+    
+    if not chase_mode_pressed:    
+        canvas.draw_image(chase_mode_image, ( 655/2, 168/2), ( 655, 168), (4*WIDTH/7-100,HEIGHT-100), (300,150))
+    else:
+        canvas.draw_image(chase_mode_image_down, ( 655/2, 168/2), ( 655, 168), (4*WIDTH/7-100,HEIGHT-100), (300,150))
+     
+    if not time_trial_pressed:
+        canvas.draw_image(time_trial_image, ( 593/2, 168/2), ( 593, 168), (6*WIDTH/7-100,HEIGHT-100), (300,150))
+    else:
+        canvas.draw_image(time_trial_image_down, ( 593/2, 168/2), ( 593, 168), (6*WIDTH/7-100,HEIGHT-100), (300,150))
+    
     #booting
-    pass
 
 frame = simplegui.create_frame("~", WIDTH, HEIGHT)
-frame.set_draw_handler(menu_handler)
-frame.set_keydown_handler(keydown)
-frame.set_keyup_handler(keyup)
 
-reset_button = frame.add_button('Multiplayer', init_multi)
-reset_button = frame.add_button('Single Player', init_single)
+#reset_button = frame.add_button('Multiplayer', init_multi)
+#reset_button = frame.add_button('Single Player', init_single)
+#menu_button = frame.add_button('Menu', init_menu)
 
 frame.start()
 
@@ -521,6 +596,8 @@ game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Pytho
 menu_music.set_volume(0.6)
 game_music.set_volume(0.6)
 game_music_intro.set_volume(0.6)
+
+init_menu()
 
 '''
 Game State:
