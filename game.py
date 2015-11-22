@@ -1,3 +1,11 @@
+#TODO:
+'''
+stars instead of balls
+background
+music
+
+'''
+
 ''' 
 Looking for a new name for this project. If you have any ideas plese put in evaluation!
 
@@ -45,7 +53,7 @@ import simplegui
 import math
 import random
 import time
-import user40_vGEjZ00kyC_7 as DrawEngine
+import user40_sh0DNBiS2W_13 as DrawEngine
         
 class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def __init__(self,x,y,r,b,g):
