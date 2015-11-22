@@ -81,6 +81,10 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
                 self.z_vel = 1200
             else:
                 self.z_vel = 0
+        elif self.z < ground_z and self.z + self.radius*3 > ground_z:
+            self.z = ground_z
+            grid.get_item(self.x,self.y).stand_damage(time_delta)
+            self.z_vel = 0
         else:#else falling into space
             self.z += self.z_vel*time_delta
         
@@ -130,7 +134,7 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         return DrawEngine.WorldPoly(points, 20, 20, 20)
 
 class GridSquare:
-    def __init__(self, height, world_poly = None, level = 0):
+    def __init__(self, height, x, y, world_poly = None, level = 0):
         self.world_poly = world_poly
         
         self.level = level
@@ -144,8 +148,11 @@ class GridSquare:
         #2 - up/down
         #3 - disapear
         
+        self.x = x
+        self.y = y
+        
         type = 0
-        if random.random() > 0.85: #if special
+        if random.random() > 0.75 and math.sqrt(x**2+y**2) > 20: #if special
             type = random.randrange(1,4)
         
         self.bouncy = False
@@ -246,19 +253,19 @@ class Grid:
             if not self.objects.has_key(x):
                 self.objects[x] = {}
             if not self.objects[x].has_key(y):
-                spawn = (x > -5 and y > -5 and x < 5 and y < 5)
-                if random.random() > 0.2 + math.sqrt(x**2+y**2)/150 or spawn:
+                spawn = math.sqrt(x**2+y**2) < 15
+                if math.sqrt(x**2+y**2) > 5 and (random.random() > 0.2 + math.sqrt(x**2+y**2)/200 or spawn):
                     if spawn:
                         level = 0
                     else:
                         level = random.randrange(0,2)
                     height = self.tile_size/4*level
-                    self.objects[x][y]=GridSquare(height, DrawEngine.WorldPoly([DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size, self.tile_size/2+y*self.tile_size, height),
+                    self.objects[x][y]=GridSquare(height, x, y, DrawEngine.WorldPoly([DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size, self.tile_size/2+y*self.tile_size, height),
                                                  DrawEngine.WorldPoint(-self.tile_size/2+x*self.tile_size,                self.tile_size/2+y*self.tile_size, height),
                                                  DrawEngine.WorldPoint(-self.tile_size/2+x*self.tile_size,                -self.tile_size/2+y*self.tile_size, height), 
                                                  DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size,  -self.tile_size/2+y*self.tile_size, height)]), level)
                 else:
-                    self.objects[x][y]=GridSquare(-100000)
+                    self.objects[x][y]=GridSquare(-100000, x, y)
                 
     def update(self,time_delta):
         for x,y in self.x_y_range():
@@ -282,9 +289,6 @@ class Grid:
 
 def render_frame(canvas):
     global game_over, left_score, right_score
-    
-    #canvas.draw_polygon([[0, 0], [0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, 0]], 1, 'White', 'Black')
-    
 
     render_objects = grid.to_list()
     render_objects.append(player_a)
@@ -299,21 +303,23 @@ def render_frame(canvas):
     left_camera.draw(canvas,render_objects)
     
     if num_players == 2:
-        canvas.draw_text('Runner          Score: ' + str(left_score), (75, 30), 24, 'White', "monospace")
-        canvas.draw_text('Seeker          Score: ' + str(right_score), (WIDTH/2+100, 30), 24, 'White', "monospace")
+        canvas.draw_text(str(left_score), (30, 30), 24, 'White', "monospace")
+        canvas.draw_text(str(right_score), (WIDTH-30, 30), 24, 'White', "monospace")
     else:
-        canvas.draw_text('Distance: ' + str(int(math.sqrt( player_a.x**2 + player_a.y**2)-500 )), (400, 30), 24, 'White')
+        canvas.draw_text(str( int(1000*(50000-math.sqrt( player_a.x**2 + player_a.y**2)+500 )/50000) ), (600, 30), 24, 'White')
 
     
 def update_world(time_delta):
     global left_score,right_score
     
+    grid.set_center(player_a[0], player_a[1])
+    grid.update(time_delta)
+    
+    
     player_a.update(time_delta)
     if num_players == 2:
         player_b.update(time_delta)
     
-    grid.set_center(player_a[0], player_a[1])
-    grid.update(time_delta)
     
     if num_players == 2:
         dx = player_b.x-player_a.x
@@ -348,6 +354,7 @@ def update_world(time_delta):
     else:
         if player_a.z < -2000:
             init_single()
+            return
             
         angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, DrawEngine.WorldPoint(0,0,0))+math.pi
         player_a.set_angle_xy(math.pi/2-angle_a)
@@ -433,9 +440,9 @@ def game_loop(canvas):
         fps= 1/avg_time
         #print "FPS: " + str(int(10/avg_time)/10)
         #print "GRID SIZE: " + str(grid.square_size**2)
-        if fps > 15:
+        if fps > 20:
             grid.square_size += 1
-        elif fps < 10:
+        elif fps < 15:
             if grid.square_size > 8:
                 grid.square_size -= 1
             else:
@@ -465,10 +472,10 @@ def init():
     frame.set_mousedrag_handler(pass_function)
     
     grid = Grid()
-            
-    player_a = WorldPlayer(500, 0, 255, 0, 0)
+    
+    player_a = WorldPlayer(3000, 0, 255, 0, 0)
     if num_players == 2:
-        player_b = WorldPlayer(-500, 0, 0, 255, 0)
+        player_b = WorldPlayer(2500, 0, 0, 255, 0)
 
     if num_players == 2:
         left_camera = DrawEngine.Camera(0,0,0,  0,     0,       0,      WIDTH/2,      HEIGHT, False, True, False, False)
@@ -557,9 +564,15 @@ def init_menu():
 def menu_handler(canvas):
     global background_image, r, how_to_play_pressed, chase_mode_pressed, time_trial_pressed
     r += 0.001
+    
+   
     canvas.draw_image(background_image, ( 705/2, 718/2), ( 705, 718), (WIDTH/2, HEIGHT/2), (HEIGHT*2.5,2.5*HEIGHT), r)
+    canvas.draw_polygon([[150, 25], [WIDTH-150, 25], [WIDTH-150, HEIGHT-425], [150, HEIGHT-425]], 12, "rgba(255,0,0,0)", "rgba(0,0,0,0.5)")
+    canvas.draw_polygon([[150, HEIGHT-425], [WIDTH-150, HEIGHT-425], [WIDTH-150, HEIGHT-375], [150, HEIGHT-375]], 12, "rgba(255,0,0,0)", "rgba(255,255,255,0.5)")
     canvas.draw_image(logo_image, ( 1634/2, 266/2), ( 1634, 266), (WIDTH/2, HEIGHT/6), (1634/2,266/2))
     canvas.draw_image(subtitle_image, ( 1733/2, 80/2), ( 1733, 80), (WIDTH/2, HEIGHT/3), (1733/2,80/2))
+     
+    
     
     if not how_to_play_pressed:
         canvas.draw_image(how_to_play_image, ( 695/2, 168/2), ( 695, 168), (2*WIDTH/7-100,HEIGHT-100), (300,150))
