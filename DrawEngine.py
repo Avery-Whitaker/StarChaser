@@ -9,7 +9,7 @@ import simplegui
 
 #in: list of points
 ##########################################################################################
-def trimZero(points, axis, axis_n):
+def trim_zero(points, axis, axis_n):
     
         #stolen from internet https://paolocrosetto.wordpress.com/python-code/
         #works like magic
@@ -92,27 +92,28 @@ def trimZero(points, axis, axis_n):
                 points.insert(cut_start,point_b)
 
     #can optimize by not running for edges of screen
-def trimAxis(points, min, max, axis, trim_min, trim_max):
+def trim_axis(points, n_min, n_max, axis, trim_min, trim_max):
     if trim_min:
         if min != 0:
             for point in points:
-                point[axis] -= min
-        trimZero(points, axis, 2)
+                point[axis] -= n_min
+        trim_zero(points, axis, 2)
+        if min != 0:
             for point in points:
-                point[axis] += min
+                point[axis] += n_min
                 
     if trim_max:
         for point in points:
-            point[axis] = -(point[axis] - max)
-        trimZero(points, axis, 2)
+            point[axis] = -(point[axis] - n_max)
+        trim_zero(points, axis, 2)
         for point in points:
-            point[axis] = -point[axis] + max
+            point[axis] = -point[axis] + n_max
         
 #mutates points_list
 #trims polygon to be in rectangle defined by xMin, xMax yMin, yMax
-def polyTrim(points, xMin, xMax, yMin, yMax, crop_left, crop_right, crop_top, crop_bot):        
-    trimAxis(points_list, xMin, xMax, 0, 2, crop_left, crop_right)
-    trimAxis(points_list, yMin, yMax, 1, 2, crop_top, crop_bot)
+def poly_trim(points, x_min, x_max, y_min, y_max, crop_left, crop_right, crop_top, crop_bot):        
+    trim_axis(points, x_min, x_max, 0, crop_left, crop_right)
+    trim_axis(points, y_min, y_max, 1, crop_top, crop_bot)
 
 class WorldAngle:
     def __init__(self, angle_xy):
@@ -267,7 +268,7 @@ class WorldPoly(Color):
                     minScale = points[len(points)-1][2]
             if maxScale > 0:
                 if minScale < 0:
-                    trimZero(points, 2, 3)
+                    trim_zero(points, 2, 3)
                 return ScreenPoly(points, self.points[0].z, self.color_r, self.color_g, self.color_b )
             return None
         
@@ -336,7 +337,7 @@ class ScreenPoly:
         new = []
         for point in self.points:
             new.append([point[0]+camera.screen_x, point[1]+camera.screen_y])
-        minX =  10000000000
+        minX = 10000000000
         maxX = -10000000000
         minY = 1000000000
         maxY = -10000000000
@@ -350,7 +351,7 @@ class ScreenPoly:
             if point[1] > maxY:
                 maxY = point[1]
         if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
-            polyTrim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height,self.crop_left,self.crop_right,self.crop_top,self.crop_bot)
+            poly_trim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height,camera.crop_left,camera.crop_right,camera.crop_top,camera.crop_bot)
             canvas.draw_polygon(new, 1, "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")","rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")")
 
         

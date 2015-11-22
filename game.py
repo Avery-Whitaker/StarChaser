@@ -53,7 +53,7 @@ import simplegui
 import math
 import random
 import time
-import user40_sh0DNBiS2W_57 as DrawEngine
+import user40_sh0DNBiS2W_67 as DrawEngine
         
 class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def __init__(self,x,y,r,b,g):
@@ -299,8 +299,8 @@ def render_frame(canvas):
     left_camera.draw(canvas,render_objects)
     
     if num_players == 2:
-        canvas.draw_text('Runner          Score: ' + str(left_score), (75, 30), 24, 'White')
-        canvas.draw_text('Seeker          Score: ' + str(right_score), (WIDTH/2+100, 30), 24, 'White')
+        canvas.draw_text('Runner          Score: ' + str(left_score), (75, 30), 24, 'White', "monospace")
+        canvas.draw_text('Seeker          Score: ' + str(right_score), (WIDTH/2+100, 30), 24, 'White', "monospace")
     else:
         canvas.draw_text('Distance: ' + str(int(math.sqrt( player_a.x**2 + player_a.y**2)-500 )), (400, 30), 24, 'White')
 
