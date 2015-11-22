@@ -79,6 +79,10 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def update(self, time_delta):
         global grid
         
+        if self.z < -100:
+            #falling_sound.rewind()
+            falling_sound.play()
+        
         for item in self.prev_loc:
             item[3] += time_delta
         self.prev_loc.append([self.x, self.y, self.z, time_delta])
@@ -99,6 +103,8 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         elif self.z >= ground_z and self.z + self.z_vel*time_delta < ground_z: #if falling into ground
             self.z = ground_z
             if grid.get_item(self.x,self.y).is_bouncy():
+                bounce_blue_sound.rewind()
+                bounce_blue_sound.play()
                 self.z_vel = 1200
             else:
                 self.z_vel = 0
@@ -112,6 +118,7 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         self.z_vel -= 1200*time_delta
         
     def jump(self):
+        
         if len(self.prev_loc) != 0:
             prev_x, prev_y, prev_z = self.get_prev_loc()
         else:
@@ -128,25 +135,33 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
             grid.get_item(self.x,self.y).jump_damage()
             self.prev_loc = []
             if grid.get_item(self.x,self.y).is_bouncy():
+                bounce_blue_sound.rewind()
+                bounce_blue_sound.play()
                 self.z_vel = 1200
             else:  
+                beep_sound.rewind()
+                beep_sound.play()
                 self.z_vel = 800
        
     def forward(self, dt):
-        self.y += self.speed * dt * math.cos(self.angle_xy)
-        self.x += self.speed * dt * math.sin(self.angle_xy)
+        if self.z > -100:
+            self.y += self.speed * dt * math.cos(self.angle_xy)
+            self.x += self.speed * dt * math.sin(self.angle_xy)
         
     def left(self, dt):
-        self.x -= self.speed * dt * math.cos(self.angle_xy)
-        self.y += self.speed * dt * math.sin(self.angle_xy)
+        if self.z > -100:
+            self.x -= self.speed * dt * math.cos(self.angle_xy)
+            self.y += self.speed * dt * math.sin(self.angle_xy)
         
     def right(self, dt):
-        self.x += self.speed * dt * math.cos(self.angle_xy)
-        self.y -= self.speed * dt * math.sin(self.angle_xy)
+        if self.z > -100:
+            self.x += self.speed * dt * math.cos(self.angle_xy)
+            self.y -= self.speed * dt * math.sin(self.angle_xy)
        
     def back(self, dt):
-        self.y -= self.speed * dt * math.cos(self.angle_xy)
-        self.x -= self.speed * dt * math.sin(self.angle_xy)
+        if self.z > -100:
+            self.y -= self.speed * dt * math.cos(self.angle_xy)
+            self.x -= self.speed * dt * math.sin(self.angle_xy)
         
     def shadow(self):
         points = []
@@ -251,6 +266,7 @@ class GridSquare:
             self.world_poly.color_b = int((42*self.health*0.01)*(0.75+self.level/4.0))
         
         if self.health <= 0:
+            platform_death_sound.play()
             self.direction = -5
             self.min_height = -100000
         
@@ -399,12 +415,12 @@ def update_world(time_delta):
         l = 1000
 
 
-        if player_b.z < -2000:
+        if player_b.z < -12000:
             left_score += 1
             init_multi()
             return
 
-        if player_a.z < -2000:
+        if player_a.z < -12000:
             right_score += 1
             init_multi()
             return
@@ -429,7 +445,7 @@ def update_world(time_delta):
         left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/4, 500+player_a.z)
         right_camera.set_pos(player_b.x - math.cos(angle_b)*l, player_b.y - math.sin(angle_b)*l - l/4, 500+player_b.z)
     else:
-        if player_a.z < -2000:
+        if player_a.z < -12000:
             init_single()
             return
             
@@ -558,9 +574,9 @@ def init():
     
     grid = Grid()
     
-    player_a = WorldPlayer(3000, 255, 0, 0, 0)
+    player_a = WorldPlayer(3000, 3000, 255, 0, 0)
     if num_players == 2:
-        player_b = WorldPlayer(2500, 0, 0, 255, 0)
+        player_b = WorldPlayer(2500, 2500, 0, 255, 0)
         
         if running_player == 1:
             temp = player_b
@@ -708,12 +724,17 @@ frame.set_draw_handler(loading_handler)
 
 frame.start()
 
+bounce_blue_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/bounce_blue.mp3")
+beep_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/beep_sound.mp3")
+falling_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/falling_sound.mp3")
+platform_death_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/platform_death_sound.mp3")
+    
 menu_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/menu.ogg")
 game_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_music_loop.ogg")
 game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_intro.ogg")
-menu_music.set_volume(0.6)
-game_music.set_volume(0.6)
-game_music_intro.set_volume(0.6)
+menu_music.set_volume(0.4)
+game_music.set_volume(0.4)
+game_music_intro.set_volume(0.4)
 
 
 
