@@ -61,7 +61,7 @@ menu_music.play()
 import math
 import random
 import time
-import user40_sh0DNBiS2W_88 as DrawEngine
+import user40_QRM9liuRW8_0 as DrawEngine
 import codeskulptor
     
     
@@ -84,12 +84,12 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         return self.prev_loc[i]
         
     def update(self, time_delta):
-        global grid,time_end
+        global grid, time_end, num_players
         
         if self.z < -200:
             game_music.rewind()
             game_music_intro.rewind()
-            if time_end is None:
+            if num_players == 1 and time_end is None:
                 time_end = time.time()
             falling_sound.play()
         
@@ -375,7 +375,7 @@ class Grid:
     def to_list(self):
         list = []
         for x,y in self.x_y_range():
-            list.append(self.objects[x][y])
+            list.append(self.objects[x][y]) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         return list
 
 def render_frame(canvas):
@@ -532,12 +532,9 @@ def render_frame(canvas):
 def distance_to_go():    
     return int(1000-(math.sqrt( player_a.x**2 + player_a.y**2)-math.sqrt(2)*2500 )/50)-20
     #return int(10-(math.sqrt( player_a.x**2 + player_a.y**2)-math.sqrt(2)*2500 )/50)
-             
-def update_world(time_delta):
-    global left_score,right_score,running_player
-    
+      
+def update_world_always(time_delta):
     if num_players == 2:
-    
         dx = player_b.x-player_a.x
         dy = player_b.y-player_a.y
         dz = player_b.z-player_a.z
@@ -556,6 +553,11 @@ def update_world(time_delta):
         
         grid.set_center(player_a[0]+math.cos(angle_temp)*600, player_a[1]+math.sin(angle_temp)*600)
         
+        
+def update_world(time_delta):
+    global left_score,right_score,running_player
+    
+
     grid.update(time_delta)
     
     
@@ -565,6 +567,11 @@ def update_world(time_delta):
     
     
     if num_players == 2:
+        dx = player_b.x-player_a.x
+        dy = player_b.y-player_a.y
+        dz = player_b.z-player_a.z
+        L = math.sqrt( dx**2 + dy**2 + dz**2 )
+        
         l = 1000
 
 
@@ -609,7 +616,6 @@ def update_world(time_delta):
         l = 1000
         left_camera.set_pos(player_a.x - math.cos(angle_a)*l, player_a.y - math.sin(angle_a)*l - l/4, 500+player_a.z)
         
-        
 keys_down = {}
 for i in range(1,300):
     keys_down[i] = False
@@ -624,11 +630,8 @@ def keydown(k):
     if k == 27: #escape
         init_menu()
         
-    if not pause and keys_down[45] or keys_down[16]:
-        if num_players == 2:
-            player_b.jump()
-        else:
-            player_a.jump()
+    if not pause and keys_down[45] or keys_down[16] and num_players == 2:
+        player_b.jump()
 
 def keyup(k):
     global keys_down
@@ -636,7 +639,7 @@ def keyup(k):
             
 def key_action(dt):    
     
-    if keys_down[45] or keys_down[16] and num_players == 2:
+    if keys_down[45]:
         if num_players == 2:
             player_b.jump()
         else:
@@ -655,13 +658,13 @@ def key_action(dt):
         player_b.right(dt)
         
     
-    if keys_down[simplegui.KEY_MAP["s"]] or keys_down[simplegui.KEY_MAP["down"]] and num_players == 1:
+    if keys_down[simplegui.KEY_MAP["s"]]:
         player_a.back(dt)
-    if keys_down[simplegui.KEY_MAP["a"]] or keys_down[simplegui.KEY_MAP["left"]] and num_players == 1:
+    if keys_down[simplegui.KEY_MAP["a"]]:
         player_a.left(dt)
-    if keys_down[simplegui.KEY_MAP["d"]] or keys_down[simplegui.KEY_MAP["right"]] and num_players == 1:
+    if keys_down[simplegui.KEY_MAP["d"]]:
         player_a.right(dt)
-    if keys_down[simplegui.KEY_MAP["w"]] or keys_down[simplegui.KEY_MAP["up"]] and num_players == 1:
+    if keys_down[simplegui.KEY_MAP["w"]]:
          player_a.forward(dt)
 
         
@@ -682,6 +685,7 @@ def game_loop(canvas):
         music_restart_time = prev_time + 42.6634
         
     ##main Stuff
+    update_world_always(dt)
     if not pause:
         update_world(dt)
     render_frame(canvas)
@@ -870,7 +874,6 @@ def end_multi(player_a_score, player_b_score):
         green_right = True
     else:
         red_right = True
-    
     pause = True
     frame.set_mouseclick_handler(click_multi_reset)
     #init_multi()
@@ -898,7 +901,6 @@ def end_single():
         red_right = True
     pause = True
     frame.set_mouseclick_handler(click_single_reset)
-    pass
 
 def click_multi_reset(pos):
     init_multi()
@@ -937,7 +939,9 @@ def menu_handler(canvas):
     #booting
         
 blinker_counter = 0
-    
+
+loading_time = time.time()
+
 def loading_handler(canvas):
     global blinker_counter
     
@@ -954,11 +958,11 @@ def loading_handler(canvas):
     
     canvas.draw_text("Loading...", (WIDTH/2-frame.get_canvas_textwidth("Loading...", 30,"monospace")/2, HEIGHT-150), 30,'White',"monospace")
         
-    if time_trial_image_down.get_height() != 0:
+    if time.time()-loading_time > 2 and time_trial_image_down.get_height() != 0:
         init_menu()
 
     
-frame = simplegui.create_frame("~", WIDTH, HEIGHT)
+frame = simplegui.create_frame("StarChaser", WIDTH, HEIGHT)
 frame.set_draw_handler(loading_handler)
 
 #reset_button = frame.add_button('Multiplayer', init_multi)
