@@ -191,6 +191,8 @@ class WorldSphere(WorldPoint, Color):
 
 #background_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background%20(11-21-2015%208-13-11%20PM)/background%20001.jpg"))
 
+background_image_counter = 0
+
 background_image = []
 for i in range(1,300):
     s = str(i)
@@ -201,9 +203,11 @@ for i in range(1,300):
 class Camera(WorldAngle, WorldPoint):
     
     def draw(self, canvas, world_objects):
-        global background_image
+        global background_image,background_image_counter
         
-        self.background_index = int(math.sqrt(self.x**2 + self.y**2))/10
+        background_image_counter+= 1+int(math.sqrt(self.x**2 + self.y**2))/20000
+        
+        self.background_index = background_image_counter 
         
         self.background_index += 2
         
