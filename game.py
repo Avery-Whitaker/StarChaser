@@ -79,11 +79,13 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         return self.prev_loc[i]
         
     def update(self, time_delta):
-        global grid
+        global grid,time_end
         
         if self.z < -200:
             game_music.rewind()
             game_music_intro.rewind()
+            if time_end is None:
+                time_end = time.time()
             falling_sound.play()
         
         for item in self.prev_loc:
@@ -392,11 +394,78 @@ def render_frame(canvas):
         canvas.draw_polygon([[x_left, y_bot], [x_right, y_bot], [x_right, y_top], [x_left, y_top]], 1, "rgba(0,0,0,0)", "rgba(0,0,0,0.5)")
         canvas.draw_text("Click to Restart", (x_left+12, HEIGHT - 36), 24, 'White', "monospace")
         
+    if red_left and red_right:
+        if distance_to_go() > 666.666:
+            if random_victory_text_id == 0:
+                text = "Go back to candy crush"
+            elif random_victory_text_id == 1:
+                text = "Better luck next time"
+            elif random_victory_text_id == 2:
+                text = "First game?"
+            elif random_victory_text_id == 3:
+                text = "Winning isn't everything"
+            elif random_victory_text_id == 4:
+                text = "You tried"
+            elif random_victory_text_id == 5:
+                text = "awwww"
+            elif random_victory_text_id == 6:
+                text = "Mistakes were made"
+            elif random_victory_text_id == 7:
+                text = "No comment"
+            elif random_victory_text_id == 8:
+                text = "wah wah wahhh"
+            else:
+                text = "Die trying"
+        elif distance_to_go() > 333.333:
+            if random_victory_text_id == 0:
+                text = "Too complicated for you?"
+            elif random_victory_text_id == 1:
+                text = "Nope"
+            elif random_victory_text_id == 2:
+                text = "Here lies skill"
+            elif random_victory_text_id == 3:
+                text = "Oops"
+            elif random_victory_text_id == 4:
+                text = "Lame"
+            elif random_victory_text_id == 5:
+                text = "Loser"
+            elif random_victory_text_id == 6:
+                text = "wow"
+            elif random_victory_text_id == 7:
+                text = "You're garbage"
+            elif random_victory_text_id == 8:
+                text = "!$%@"
+            else:
+                text = "Must be a glitch"
+        else:
+            if random_victory_text_id == 0:
+                text = "Not even close"
+            elif random_victory_text_id == 1:
+                text = "Just give up"
+            elif random_victory_text_id == 2:
+                text = "You blew it"
+            elif random_victory_text_id == 3:
+                text = "You suck"
+            elif random_victory_text_id == 4:
+                text = "Nice one"
+            elif random_victory_text_id == 5:
+                text = "Pro top: don't fall"
+            elif random_victory_text_id == 6:
+                text = "Why bother trying?"
+            elif random_victory_text_id == 7:
+                text = "Try pressing space next time"
+            elif random_victory_text_id == 8:
+                text = "Amuture"
+            else:
+                text = "..."
+        canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 50,"monospace")/2, 150), 50,'White',"monospace")
+            
+        
     if num_players == 2:
         canvas.draw_text(str(left_score), (30, 30), 24, 'White', "monospace")
         canvas.draw_text(str(right_score), (WIDTH-30, 30), 24, 'White', "monospace")
     else:
-        if pause:
+        if time_end is not None:
             time_str = str(int((time_end-time_start)*10)/10.0)
         else:
             time_str = str(int((time.time()-time_start)*10)/10.0)  
@@ -404,44 +473,48 @@ def render_frame(canvas):
             canvas.draw_text("Distance", (0, 25), 24, 'White',"monospace")
             canvas.draw_text(str(distance_to_go()), (0, 53), 36, 'White',"monospace")
    
-            canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, "monospace")/2, 14), 12, 'White',"monospace")
-            canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, "monospace")/2, 38), 24, 'White',"monospace")
-
-
+            if highscore != 10000000:
+                canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, "monospace")/2, 14), 12, 'White',"monospace")
+                canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, "monospace")/2, 38), 24, 'White',"monospace")
 
             canvas.draw_text("Time", (1140, 25), 24, 'White',"monospace")
             canvas.draw_text(time_str, (1200-frame.get_canvas_textwidth(time_str, 36, "monospace"), 53), 36, 'White',"monospace")
+            
         else:
             if highscore == time_end-time_start:
-                text = "new record!"
+                text = "New Record!"
             else:
                 if random_victory_text_id == 0:
-                    text = "You made it."
+                    text = "You made it!"
                 elif random_victory_text_id == 1:
-                    text = "Not quite record worthy."
+                    text = "Not quite record worthy!"
                 elif random_victory_text_id == 2:
-                    text = "At least you didn't die."
+                    text = "You didn't die!"
                 elif random_victory_text_id == 3:
-                    text = "Almost fast enough."
+                    text = "Pretty good considering!"
                 elif random_victory_text_id == 4:
-                    text = "Better late then never."
+                    text = "Better late then never!"
                 elif random_victory_text_id == 5:
-                    text = "Almost"
+                    text = "Close enough!"
                 elif random_victory_text_id == 6:
-                    text = "A little on the slow side."
+                    text = "A little on the slow side"
                 elif random_victory_text_id == 7:
-                    text = "A slow success."
+                    text = "New Record! Not."
                 elif random_victory_text_id == 8:
-                    text = "Distance obtained"
+                    text = "Adequate!"
                 else:
-                    text = "Mission complete"
+                    text = "Ok!"
+                    
+                canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, "monospace")/2, HEIGHT/2+100), 12, 'White',"monospace")
+                canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, "monospace")/2, HEIGHT/2+126), 24, 'White',"monospace")
+
             canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 72, "monospace")/2, 100), 72, 'White',"monospace")
             canvas.draw_text("Time:", (WIDTH/2-frame.get_canvas_textwidth("Time:", 30, "monospace")/2, HEIGHT/2-90), 30, 'White',"monospace")
             canvas.draw_text(time_str, (WIDTH/2-frame.get_canvas_textwidth(time_str, 84, "monospace")/2, HEIGHT/2), 84, 'White',"monospace")
            
             
 def distance_to_go():    
-    return int(1000-(math.sqrt( player_a.x**2 + player_a.y**2)-math.sqrt(2)*2500 )/50)
+    return int(1000-(math.sqrt( player_a.x**2 + player_a.y**2)-math.sqrt(2)*2500 )/50)-20
     #return int(10-(math.sqrt( player_a.x**2 + player_a.y**2)-math.sqrt(2)*2500 )/50)
              
 def update_world(time_delta):
@@ -451,7 +524,8 @@ def update_world(time_delta):
     
         dx = player_b.x-player_a.x
         dy = player_b.y-player_a.y
-        L = math.sqrt( dx**2 + dy**2 )
+        dz = player_b.z-player_a.z
+        L = math.sqrt( dx**2 + dy**2 + dz**2 )
         
         #angle_temp = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, player_b)+math.pi
         #grid.set_center(player_b[0]+math.cos(angle_temp)*0.666*L, player_b[1]+math.sin(angle_temp)*0.666*L)
@@ -580,12 +654,12 @@ count = 0
 prev_time = time.time()
     
 def game_loop(canvas):
-    global count, prev_time,music_restart_time
+    global count, prev_time,music_restart_time, pause
     dt = time.time() - prev_time
     prev_time = time.time()
     
     #handle music
-    if prev_time > music_restart_time:
+    if not pause and prev_time > music_restart_time:
         game_music_intro.rewind()
         game_music.rewind()
         game_music.play()
@@ -611,9 +685,9 @@ def game_loop(canvas):
         fps= 1/avg_time
         #print "FPS: " + str(int(10/avg_time)/10)
         #print "GRID SIZE: " + str(grid.square_size**2)
-        if fps > 25:
+        if fps > 20:
             grid.square_size += 1
-        elif fps < 20:
+        elif fps < 15:
             if grid.square_size > 6:
                 grid.square_size -= 1
             else:
@@ -625,7 +699,7 @@ HEIGHT = 600
 
 num_players = 2
 
-highscore = 100 #80.7 is avery's highscore
+highscore = 10000000 #80.7 is avery's highscore
 
 left_score = 0
 right_score = 0
@@ -640,6 +714,7 @@ def init():
     red_right = False
     red_left = False
     
+    victory_sound.rewind()
     menu_music.rewind()
     game_music_intro.rewind()
     game_music.rewind()
@@ -664,7 +739,8 @@ def init():
             player_b = player_a
             player_a = temp
     else:
-        player_a = WorldPlayer(2500, 2500, 255, 0, 0)
+        random_angle = random.random()*2*math.pi
+        player_a = WorldPlayer(2500.0*math.cos(random_angle), 2500.0*math.sin(random_angle), 255, 0, 0)
         
         
 
@@ -676,10 +752,10 @@ def init():
         
     
 def init_single():
-    global num_players,time_start,random_victory_text_id
+    global num_players,time_start,random_victory_text_id,time_end
     
     time_start = time.time()
-    
+    time_end = None
     random_victory_text_id = random.randrange(0,10)
     
     num_players = 1
@@ -768,6 +844,7 @@ def init_menu():
 def end_multi(player_a_score, player_b_score):
     global pause, green_right, green_left, red_right, red_left
     
+    
     if player_a_score == 1:
         green_left = True
     else:
@@ -786,10 +863,15 @@ def end_multi(player_a_score, player_b_score):
 def end_single():
     global pause, green_right, green_left, red_right, red_left,time_end, highscore
     
-    time_end = time.time()
+    game_music.rewind()
+    game_music_intro.rewind()
+    
+    if time_end is None:
+        time_end = time.time()
     
     
     if distance_to_go() <= 0:
+        victory_sound.play()
         if time_end-time_start < highscore:
             highscore = time_end-time_start
             
@@ -868,12 +950,14 @@ bounce_blue_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Pyth
 beep_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/beep_sound.mp3")
 falling_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/falling_sound.mp3")
 platform_death_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/platform_death_sound.mp3")
+victory_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/victory_fanfare.mp3")
+    
     
 menu_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/menu.ogg")
 game_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_music_loop.ogg")
 game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_intro.ogg")
-menu_music.set_volume(0.4)
-game_music.set_volume(0.4)
+menu_music.set_volume(0.3)
+game_music.set_volume(0.3)
 game_music_intro.set_volume(0.4)
 
 
