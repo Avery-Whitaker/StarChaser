@@ -3,7 +3,7 @@
 stars instead of balls
 background
 music
-
+ 
 '''
 
 ''' 
@@ -51,8 +51,12 @@ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 import simplegui
 
-loading_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading.png")
-loading_blank_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_blank.png")
+loading_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_back.png")
+loading_animation = []
+for i in range(1,13):
+    loading_animation.append(simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_"+str(i)+".png"))
+menu_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/menu.ogg")
+menu_music.play()
 
 import math
 import random
@@ -69,6 +73,7 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         self.z_vel = 20
         self.radius = 30
         self.speed = 800
+        self.speed_mod = 1
         
         self.prev_loc = []
         
@@ -116,6 +121,7 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         elif self.z < ground_z and self.z + self.radius*3 > ground_z:
             self.z = ground_z
             grid.get_item(self.x,self.y).stand_damage(time_delta)
+            self.speed_mod = grid.get_item(self.x,self.y).speed_mod
             self.z_vel = 0
         else:#else falling into space
             self.z += self.z_vel*time_delta
@@ -138,6 +144,7 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         
         if self.z == ground_z or self.z == moving_ground_z or (prev_z >= prev_ground_z and prev_z < self.radius/2+prev_ground_z) and grid.get_item(self.x,self.y) is not None:
             grid.get_item(self.x,self.y).jump_damage()
+            self.speed_mod = grid.get_item(self.x,self.y).speed_mod
             self.prev_loc = []
             if grid.get_item(self.x,self.y).is_bouncy():
                 bounce_blue_sound.rewind()
@@ -150,23 +157,23 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
        
     def forward(self, dt):
         if self.z > -100:
-            self.y += self.speed * dt * math.cos(self.angle_xy)
-            self.x += self.speed * dt * math.sin(self.angle_xy)
+            self.y += self.speed * dt * math.cos(self.angle_xy) * self.speed_mod
+            self.x += self.speed * dt * math.sin(self.angle_xy) * self.speed_mod
         
     def left(self, dt):
         if self.z > -100:
-            self.x -= self.speed * dt * math.cos(self.angle_xy)
-            self.y += self.speed * dt * math.sin(self.angle_xy)
+            self.x -= self.speed * dt * math.cos(self.angle_xy) * self.speed_mod
+            self.y += self.speed * dt * math.sin(self.angle_xy) * self.speed_mod
         
     def right(self, dt):
         if self.z > -100:
-            self.x += self.speed * dt * math.cos(self.angle_xy)
-            self.y -= self.speed * dt * math.sin(self.angle_xy)
+            self.x += self.speed * dt * math.cos(self.angle_xy) * self.speed_mod
+            self.y -= self.speed * dt * math.sin(self.angle_xy) * self.speed_mod
        
     def back(self, dt):
         if self.z > -100:
-            self.y -= self.speed * dt * math.cos(self.angle_xy)
-            self.x -= self.speed * dt * math.sin(self.angle_xy)
+            self.y -= self.speed * dt * math.cos(self.angle_xy) * self.speed_mod
+            self.x -= self.speed * dt * math.sin(self.angle_xy) * self.speed_mod
         
     def shadow(self):
         points = []
@@ -205,7 +212,7 @@ class GridSquare:
         
         type = 0
         if random.random() > 0.75 and math.sqrt(x**2+y**2) > 20: #if special
-            type = random.randrange(1,4)
+            type = random.randrange(1,5)
         
         self.bouncy = False
         if type == 1:
@@ -220,6 +227,10 @@ class GridSquare:
         self.health = None
         if type == 3:
             self.health = 100
+            
+        self.speed_mod = 1
+        if type == 4:
+            self.speed_mod = 1.5
         
         if self.world_poly is not None:
             
@@ -239,6 +250,10 @@ class GridSquare:
                 self.world_poly.color_b = int(80*(0.75+self.level/4.0))
             elif type == 3:
                 self.health_update()
+            elif type == 4:
+                self.world_poly.color_r = int(0*(0.75+self.level/4.0))
+                self.world_poly.color_g = int(200*(0.75+self.level/4.0))
+                self.world_poly.color_b = int(0*(0.75+self.level/4.0))
     
     def update(self, time_delta):   
         
@@ -271,6 +286,7 @@ class GridSquare:
             self.world_poly.color_b = int((42*self.health*0.01)*(0.75+self.level/4.0))
         
         if self.health <= 0:
+            platform_death_sound.rewind()
             platform_death_sound.play()
             self.direction = -5
             self.min_height = -100000
@@ -924,17 +940,22 @@ blinker_counter = 0
     
 def loading_handler(canvas):
     global blinker_counter
-    blinker_counter+=0.01
- 
-    if int(blinker_counter)%2==0:
-        canvas.draw_image(loading_image, ( 600/2, 400/2), ( 600, 400), (WIDTH/2,HEIGHT/2), (WIDTH,HEIGHT))
-    else:
-        canvas.draw_image(loading_blank_image, ( 600/2, 400/2), ( 600, 400), (WIDTH/2,HEIGHT/2), (WIDTH,HEIGHT))
-
     
+    blinker_counter+=1
+    if blinker_counter == 12*5:
+        blinker_counter = 0
+    
+    canvas.draw_image(loading_image, ( 600/2, 400/2), ( 600, 400), (WIDTH/2,HEIGHT/2), (WIDTH,HEIGHT))
+    
+    canvas.draw_image(loading_animation[10-blinker_counter/5], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
+    canvas.draw_image(loading_animation[10-blinker_counter/5-1], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
+    canvas.draw_image(loading_animation[10-blinker_counter/5-2], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
+     
+    
+    canvas.draw_text("Loading...", (WIDTH/2-frame.get_canvas_textwidth("Loading...", 30,"monospace")/2, HEIGHT-150), 30,'White',"monospace")
+        
     if time_trial_image_down.get_height() != 0:
         init_menu()
-        codeskulptor.set_timeout(2)
 
     
 frame = simplegui.create_frame("~", WIDTH, HEIGHT)
@@ -953,7 +974,6 @@ platform_death_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/P
 victory_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/victory_fanfare.mp3")
     
     
-menu_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/menu.ogg")
 game_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_music_loop.ogg")
 game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_intro.ogg")
 menu_music.set_volume(0.3)

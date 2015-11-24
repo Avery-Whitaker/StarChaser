@@ -215,10 +215,8 @@ class Camera(WorldAngle, WorldPoint):
             self.background_index += 298
         while self.background_index >= 299:
             self.background_index -= 298
-            
-        scale = 1+int(math.sqrt(self.x**2 + self.y**2))/60000.0
         
-        canvas.draw_image(background_image[self.background_index], (1280/2,720/2), (1280,720), (self.screen_x+self.screen_width/2, self.screen_y+self.screen_height/2), (self.screen_width*scale,self.screen_height*scale))
+        canvas.draw_image(background_image[self.background_index], (1280/2,720/2), (1280,720), (self.screen_x+self.screen_width/2, self.screen_y+self.screen_height/2), (self.screen_width,self.screen_height))
         canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 1, 'Black', "rgba(0,0,0,0.6)")
         
         list = []
