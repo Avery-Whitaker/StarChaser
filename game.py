@@ -61,7 +61,7 @@ menu_music.play()
 import math
 import random
 import time
-import user40_QRM9liuRW8_0 as DrawEngine
+import user40_QRM9liuRW8_2 as DrawEngine
 import codeskulptor
     
     
@@ -109,10 +109,28 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         elif self.z == ground_z or self.z == moving_ground_z: #if sitting on ground
             self.z = ground_z
             grid.get_item(self.x,self.y).stand_damage(time_delta)
+            
+            if self.speed_mod < grid.get_item(self.x,self.y).speed_mod:
+                speed_up_sound.rewind()
+                speed_up_sound.play()
+            if self.speed_mod > grid.get_item(self.x,self.y).speed_mod:
+                speed_down_sound.rewind()
+                speed_down_sound.play()
+            self.speed_mod = grid.get_item(self.x,self.y).speed_mod
+            
             self.z_vel = 0
         elif self.z >= ground_z and self.z + self.z_vel*time_delta < ground_z: #if falling into ground
             self.z = ground_z
             if grid.get_item(self.x,self.y).is_bouncy():
+                            
+                if self.speed_mod < grid.get_item(self.x,self.y).speed_mod:
+                    speed_up_sound.rewind()
+                    speed_up_sound.play()
+                if self.speed_mod > grid.get_item(self.x,self.y).speed_mod:
+                    speed_down_sound.rewind()
+                    speed_down_sound.play()
+                self.speed_mod = grid.get_item(self.x,self.y).speed_mod
+            
                 bounce_blue_sound.rewind()
                 bounce_blue_sound.play()
                 self.z_vel = 1200
@@ -121,12 +139,25 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         elif self.z < ground_z and self.z + self.radius*3 > ground_z:
             self.z = ground_z
             grid.get_item(self.x,self.y).stand_damage(time_delta)
+            
+            if self.speed_mod < grid.get_item(self.x,self.y).speed_mod:
+                speed_up_sound.rewind()
+                speed_up_sound.play()
+            if self.speed_mod > grid.get_item(self.x,self.y).speed_mod:
+                speed_down_sound.rewind()
+                speed_down_sound.play()
             self.speed_mod = grid.get_item(self.x,self.y).speed_mod
+            
             self.z_vel = 0
         else:#else falling into space
             self.z += self.z_vel*time_delta
         
         self.z_vel -= 1200*time_delta
+        
+        if self.speed_mod > 1.2:
+            self.color_g = 255
+        else:
+            self.color_g = 0
         
     def jump(self):
         
@@ -144,7 +175,15 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         
         if self.z == ground_z or self.z == moving_ground_z or (prev_z >= prev_ground_z and prev_z < self.radius/2+prev_ground_z) and grid.get_item(self.x,self.y) is not None:
             grid.get_item(self.x,self.y).jump_damage()
+            
+            if self.speed_mod < grid.get_item(self.x,self.y).speed_mod:
+                speed_up_sound.rewind()
+                speed_up_sound.play()
+            if self.speed_mod > grid.get_item(self.x,self.y).speed_mod:
+                speed_down_sound.rewind()
+                speed_down_sound.play()
             self.speed_mod = grid.get_item(self.x,self.y).speed_mod
+            
             self.prev_loc = []
             if grid.get_item(self.x,self.y).is_bouncy():
                 bounce_blue_sound.rewind()
@@ -411,7 +450,9 @@ def render_frame(canvas):
         canvas.draw_text("Click to Restart", (x_left+12, HEIGHT - 36), 24, 'White', "monospace")
         
     if red_left and red_right:
-        if distance_to_go() > 666.666:
+        if distance_to_go() > 1000:
+            text = "...Wrong way...."
+        elif distance_to_go() > 666.666:
             if random_victory_text_id == 0:
                 text = "Go back to candy crush"
             elif random_victory_text_id == 1:
@@ -976,7 +1017,8 @@ beep_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game
 falling_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/falling_sound.mp3")
 platform_death_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/platform_death_sound.mp3")
 victory_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/victory_fanfare.mp3")
-    
+speed_up_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_up.mp3")
+speed_down_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_down.mp3")
     
 game_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_music_loop.ogg")
 game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_intro.ogg")

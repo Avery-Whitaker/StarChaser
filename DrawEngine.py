@@ -302,6 +302,8 @@ class ScreenPoint:
     
 player_image_a = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a.png")
 player_image_b = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b.png")
+player_image_a_speedup = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a_speed.png")
+player_image_b_speedup = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b_speed.png")
 rotate = 0
     
 class ScreenCircle(ScreenPoint, Color):
@@ -323,11 +325,18 @@ class ScreenCircle(ScreenPoint, Color):
         
         if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
             if self.color_b == 255:
-                canvas.draw_image(player_image_a, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                if self.color_g != 255:
+                    canvas.draw_image(player_image_a_speedup, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                else:
+                    canvas.draw_image(player_image_a, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
             else:
                 rotate += 0.05
-                canvas.draw_image(player_image_b, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
-            
+                if self.color_g != 255:
+                    canvas.draw_image(player_image_b, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                else:
+                    canvas.draw_image(player_image_b_speedup, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+         
+                    
             #canvas.draw_circle((self.x+camera.screen_x, self.y+camera.screen_y), self.radius * self.scale, 1, self.rgba(), self.rgba())
 
 class ScreenPoly:
