@@ -86,7 +86,7 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
     def update(self, time_delta):
         global grid, time_end, num_players
         
-        if self.z < -200:
+        if self.z < -400:
             game_music.rewind()
             game_music_intro.rewind()
             if num_players == 1 and time_end is None:
@@ -301,6 +301,9 @@ class GridSquare:
             self.world_poly.color_a += time_delta*0.9
             if self.world_poly.color_a > 1:
                 self.world_poly.color_a = 1
+        
+        if self.height <= -400:
+            self.height = -1000000
         
         if self.direction != 0:
             self.prev_height = self.height
@@ -990,14 +993,38 @@ def loading_handler(canvas):
     if blinker_counter == 12*5:
         blinker_counter = 0
     
-    canvas.draw_image(loading_image, ( 600/2, 400/2), ( 600, 400), (WIDTH/2,HEIGHT/2), (WIDTH,HEIGHT))
-    
-    canvas.draw_image(loading_animation[10-blinker_counter/5], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
-    canvas.draw_image(loading_animation[10-blinker_counter/5-1], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
-    canvas.draw_image(loading_animation[10-blinker_counter/5-2], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
+    if time.time()-loading_time > 2 or time_trial_image_down.get_height() != 0:
+        canvas.draw_image(loading_image, ( 600/2, 400/2), ( 600, 400), (WIDTH/2,HEIGHT/2), (WIDTH,HEIGHT))
+        canvas.draw_image(loading_animation[10-blinker_counter/5], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
+        canvas.draw_image(loading_animation[10-blinker_counter/5-1], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
+        canvas.draw_image(loading_animation[10-blinker_counter/5-2], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
      
+        
+    loading_text = ""
     
-    canvas.draw_text("Loading...", (WIDTH/2-frame.get_canvas_textwidth("Loading...", 30,"monospace")/2, HEIGHT-150), 30,'White',"monospace")
+    if time.time()-loading_time < 5:
+        loading_text = "Loading..."
+    elif time.time()-loading_time > 10 and time.time()-loading_time < 15:
+        loading_text = "Still loading..."
+    elif time.time()-loading_time > 20 and time.time()-loading_time < 25:
+        loading_text = "Making everything perfect..."
+    elif time.time()-loading_time > 30 and time.time()-loading_time < 35:
+        loading_text = "Clipping polygons..."
+    elif time.time()-loading_time > 40 and time.time()-loading_time < 45:
+        loading_text = "Raising the volume..."
+    elif time.time()-loading_time > 50 and time.time()-loading_time < 55:
+        loading_text = "Thinking about how you will die..."
+    elif time.time()-loading_time > 60 and time.time()-loading_time < 65:
+        loading_text = "The wait will be worth it..."
+    elif time.time()-loading_time > 70 and time.time()-loading_time < 75:
+        loading_text = "Browers arn't very fast..."
+    elif time.time()-loading_time > 80 and time.time()-loading_time < 85:
+        loading_text = "Almost there..."
+    elif time.time()-loading_time > 90:
+        loading_text = "Sorry, this is taking awhile..."
+    
+    
+    canvas.draw_text(loading_text, (WIDTH/2-frame.get_canvas_textwidth(loading_text, 30,"monospace")/2, HEIGHT-150), 30,'White',"monospace")
         
     if time.time()-loading_time > 2 and time_trial_image_down.get_height() != 0:
         init_menu()
