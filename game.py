@@ -1,3 +1,24 @@
+#Please don't grade me on two player mode, single player is better
+#Two player mode can be disabled with the below constant
+
+
+#I keep two player mode as a feat of technical prowess.
+#Single player is where the fun is!
+#I recommend disableing two player for published versions.
+TWO_PLAYER_ENABLED = False
+
+#Print FPS and number of tiles rendered
+FPS_PRINT = False
+
+#Set music volume between 0.0 and 1.0
+MUSIC_VOLUME = 0.2
+SOUND_VOLUME = 1
+
+#Set a default highscore or leave at 10000000 for no initial highscore
+highscore = 10000000
+
+FONT = "monospace"
+
 '''
 Author Contact:
 
@@ -22,17 +43,64 @@ THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 '''
+
+#Sorry, game does not handle resizing
+WIDTH = 1200
+HEIGHT = 600
+
 import math
 import random
 import time
 import simplegui
-FPS_PRINT = True
 loading_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_back.png")
 loading_animation = []
 for i in range(1,13):
     loading_animation.append(simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_"+str(i)+".png"))
 menu_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/menu.ogg")
 menu_music.play()
+background_image = []
+for i in range(1,300):
+    s = str(i)
+    while(len(s) < 3):
+        s = '0'+s
+    background_image.append(simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background/background%20"+s+".png"))
+logo_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/logo.png")
+background_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background_round.png")
+subtitle_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/subtitle.png")
+how_to_play_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/how_to_play.png")
+chase_mode_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/chase_mode.png")
+time_trial_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/time_trial.png")
+how_to_play_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/how_to_play_pressed.png")
+chase_mode_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/chase_mode_pressed.png")
+time_trial_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/time_trial_pressed.png")
+if TWO_PLAYER_ENABLED:
+    how_to_play_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/How%20to%20play.png")
+else:
+    how_to_play_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/How%20to%20play_one_player.png")
+player_image_a = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a.png")
+player_image_b = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b.png")
+player_image_a_speedup = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a_speed.png")
+player_image_b_speedup = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b_speed.png")
+bounce_blue_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/bounce_blue.mp3")
+beep_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/beep_sound.mp3")
+falling_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/falling_sound.mp3")
+platform_death_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/platform_death_sound.mp3")
+victory_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/victory_fanfare.mp3")
+speed_up_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_up.mp3")
+speed_down_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_down.mp3")
+game_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_music_loop.ogg")
+game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_intro.ogg")
+menu_music.set_volume(MUSIC_VOLUME)
+game_music.set_volume(MUSIC_VOLUME)
+game_music_intro.set_volume(MUSIC_VOLUME)
+speed_down_sound.set_volume(SOUND_VOLUME)
+speed_up_sound.set_volume(SOUND_VOLUME)
+victory_sound.set_volume(SOUND_VOLUME)
+platform_death_sound.set_volume(SOUND_VOLUME)
+falling_sound.set_volume(SOUND_VOLUME)
+beep_sound.set_volume(SOUND_VOLUME)
+bounce_blue_sound.set_volume(SOUND_VOLUME)
+
 def trim_zero(points, axis, axis_n):
         #Below function from: https://paolocrosetto.wordpress.com/python-code/
         #I claim no rights to this function
@@ -194,17 +262,10 @@ class WorldSphere(WorldPoint, Color):
 
 background_image_counter = 0
 
-background_image = []
-for i in range(1,300):
-    s = str(i)
-    while(len(s) < 3):
-        s = '0'+s
-    background_image.append(simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background/background%20"+s+".png"))
-    
 class Camera(WorldAngle, WorldPoint):
     
     def draw(self, canvas, world_objects):
-        global background_image,background_image_counter
+        global background_image, background_image_counter
         
         background_image_counter+= 1+int(math.sqrt(self.x**2 + self.y**2))/20000
         
@@ -301,11 +362,7 @@ class ScreenPoint:
             return 0
         return 1
     
-player_image_a = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a.png")
-player_image_b = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b.png")
-player_image_a_speedup = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a_speed.png")
-player_image_b_speedup = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b_speed.png")
-rotate = 0
+player_rotate = 0
     
 class ScreenCircle(ScreenPoint, Color):
     def __init__(self,x,y,world_z,scale,radius, r,g,b,a):
@@ -322,20 +379,20 @@ class ScreenCircle(ScreenPoint, Color):
         return 1
             
     def draw(self, canvas, camera):
-        global rotate
+        global player_rotate
         
         if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
             if self.color_b == 255:
                 if self.color_g != 255:
-                    canvas.draw_image(player_image_a_speedup, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                    canvas.draw_image(player_image_a_speedup, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), player_rotate)
                 else:
-                    canvas.draw_image(player_image_a, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                    canvas.draw_image(player_image_a, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), player_rotate)
             else:
-                rotate += 0.05
+                player_rotate += 0.05
                 if self.color_g != 255:
-                    canvas.draw_image(player_image_b, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                    canvas.draw_image(player_image_b, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), player_rotate)
                 else:
-                    canvas.draw_image(player_image_b_speedup, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                    canvas.draw_image(player_image_b_speedup, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), player_rotate)
                     
 class ScreenPoly:
     def __init__(self, points, world_z, color_r, color_g, color_b, color_a):
@@ -378,12 +435,6 @@ class ScreenPoly:
             poly_trim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height,camera.crop_left,camera.crop_right,camera.crop_top,camera.crop_bot)
             canvas.draw_polygon(new, 1, "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")","rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(self.color_a)+")")
 
-        
-
-import codeskulptor
-    
-    
-    
 class WorldPlayer(WorldSphere, WorldAngle):
     def __init__(self,x,y,r,b,g):
         WorldSphere.__init__(self, x, y, 600, 30, r,g,b,1)
@@ -392,7 +443,6 @@ class WorldPlayer(WorldSphere, WorldAngle):
         self.radius = 30
         self.speed = 800
         self.speed_mod = 1
-        
         self.prev_loc = []
         
     def get_prev_loc(self):
@@ -418,7 +468,6 @@ class WorldPlayer(WorldSphere, WorldAngle):
             self.prev_loc.pop(0)
         
         ground_z = grid.grid_height(self.x,self.y)+self.radius
-        
         
         moving_ground_z = grid.grid_prev_height(self.x,self.y)+self.radius
         
@@ -478,7 +527,6 @@ class WorldPlayer(WorldSphere, WorldAngle):
             self.color_g = 0
         
     def jump(self):
-        
         if len(self.prev_loc) != 0:
             prev_x, prev_y, prev_z = self.get_prev_loc()
         else:
@@ -489,7 +537,6 @@ class WorldPlayer(WorldSphere, WorldAngle):
         prev_ground_z = grid.grid_height(prev_x,prev_y)+self.radius
         
         moving_ground_z = grid.grid_prev_height(self.x,self.y)+self.radius
-        
         
         if self.z == ground_z or self.z == moving_ground_z or (prev_z >= prev_ground_z and prev_z < self.radius/2+prev_ground_z) and grid.get_item(self.x,self.y) is not None:
             grid.get_item(self.x,self.y).jump_damage()
@@ -557,10 +604,10 @@ class GridSquare:
         self.height = height
         self.prev_height = -10000
 
+        self.sound_played = False
         
         self.x = x
         self.y = y
-        
         
         type = 0
         if random.random() > 0.75 and math.sqrt(x**2+y**2) > 20: #if special
@@ -608,8 +655,7 @@ class GridSquare:
                 self.world_poly.color_b = int(0*(0.75+self.level/4.0))
     
     def update(self, time_delta):   
-        
-              
+            
         if self.world_poly is not None:  
             self.world_poly.color_a += time_delta*0.9
             if self.world_poly.color_a > 1:
@@ -641,8 +687,10 @@ class GridSquare:
             self.world_poly.color_b = int((42*self.health*0.01)*(0.75+self.level/4.0))
         
         if self.health <= 0:
-            platform_death_sound.rewind()
-            platform_death_sound.play()
+            if not self.sound_played:
+                platform_death_sound.rewind()
+                platform_death_sound.play()
+            self.sound_played = True
             self.direction = -5
             self.min_height = -100000
         
@@ -701,8 +749,7 @@ class Grid:
                                                  WorldPoint(self.tile_size/2+x*self.tile_size,  -self.tile_size/2+y*self.tile_size, height)]), level)
                 else:
                     self.objects[x][y]=GridSquare(-100000, x, y)
-         
-                
+            
     def update(self,time_delta):
         for x,y in self.x_y_range():
             self.objects[x][y].update(time_delta)
@@ -734,7 +781,7 @@ class Grid:
         return list
 
 def render_frame(canvas):
-    global game_over, left_score, right_score, random_victory_text_id
+    global game_over, left_score, right_score, random_victory_text_id, match_start_countdown,running_player
 
     render_objects = grid.to_list()
     render_objects.append(player_a)
@@ -758,12 +805,12 @@ def render_frame(canvas):
         canvas.draw_polygon([[0, 0], [WIDTH/2, 0], [WIDTH/2, HEIGHT], [0, HEIGHT]], 1, "rgba(0,0,0,0)", "rgba(255,0,0,0.5)")
         
     if green_right or green_left or red_right or red_left:
-        x_left = WIDTH/2-frame.get_canvas_textwidth("Click to Restart", 24, "monospace")/2-12
-        x_right = WIDTH/2+frame.get_canvas_textwidth("Click to Restart", 24, "monospace")/2+12
+        x_left = WIDTH/2-frame.get_canvas_textwidth("Click to Restart", 24, FONT)/2-12
+        x_right = WIDTH/2+frame.get_canvas_textwidth("Click to Restart", 24, FONT)/2+12
         y_top = HEIGHT - 48-36
         y_bot = HEIGHT
         canvas.draw_polygon([[x_left, y_bot], [x_right, y_bot], [x_right, y_top], [x_left, y_top]], 1, "rgba(0,0,0,0)", "rgba(0,0,0,0.5)")
-        canvas.draw_text("Click to Restart", (x_left+12, HEIGHT - 36), 24, 'White', "monospace")
+        canvas.draw_text("Click to Restart", (x_left+12, HEIGHT - 36), 24, 'White', FONT)
         
     if red_left and red_right:
         if distance_to_go() > 1000:
@@ -831,27 +878,43 @@ def render_frame(canvas):
                 text = "Amuture"
             else:
                 text = "..."
-        canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 50,"monospace")/2, 150), 50,'White',"monospace")
-            
-        
+        canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 50,FONT)/2, 150), 50,'White',FONT)
+           
     if num_players == 2:
-        canvas.draw_text(str(left_score), (30, 30), 24, 'White', "monospace")
-        canvas.draw_text(str(right_score), (WIDTH-30, 30), 24, 'White', "monospace")
+        current_time = time.time()
+        if match_start_countdown > current_time:
+            text = str(int(match_start_countdown-current_time))
+            canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 120, FONT)/2, HEIGHT/2), 120, 'Yellow',FONT)
+            
+            if running_player == 0:
+                text_left = "Runner"
+                text_right = "Tagger"
+            if running_player == 1:
+                text_left = "Tagger"
+                text_right = "Runner"
+                
+            canvas.draw_text(text_left, (WIDTH/4-frame.get_canvas_textwidth(text_left, 40, FONT)/2, HEIGHT/8), 40, 'White',FONT)
+            canvas.draw_text(text_right, (3*WIDTH/4-frame.get_canvas_textwidth(text_right, 40, FONT)/2, HEIGHT/8), 40, 'White',FONT)
+
+        
+        
+        canvas.draw_text(str(left_score), (30, 30), 24, 'White', FONT)
+        canvas.draw_text(str(right_score), (WIDTH-30, 30), 24, 'White', FONT)
     else:
         if time_end is not None:
             time_str = str(int((time_end-time_start)*10)/10.0)
         else:
             time_str = str(int((time.time()-time_start)*10)/10.0)  
         if distance_to_go() > 0:
-            canvas.draw_text("Distance", (0, 25), 24, 'White',"monospace")
-            canvas.draw_text(str(distance_to_go()), (0, 53), 36, 'White',"monospace")
+            canvas.draw_text("Distance", (0, 25), 24, 'White',FONT)
+            canvas.draw_text(str(distance_to_go()), (0, 53), 36, 'White',FONT)
    
             if highscore != 10000000:
-                canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, "monospace")/2, 14), 12, 'White',"monospace")
-                canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, "monospace")/2, 38), 24, 'White',"monospace")
+                canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, FONT)/2, 14), 12, 'White',FONT)
+                canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, FONT)/2, 38), 24, 'White',FONT)
 
-            canvas.draw_text("Time", (1140, 25), 24, 'White',"monospace")
-            canvas.draw_text(time_str, (1200-frame.get_canvas_textwidth(time_str, 36, "monospace"), 53), 36, 'White',"monospace")
+            canvas.draw_text("Time", (1140, 25), 24, 'White',FONT)
+            canvas.draw_text(time_str, (1200-frame.get_canvas_textwidth(time_str, 36, FONT), 53), 36, 'White',FONT)
             
         else:
             if highscore == time_end-time_start:
@@ -878,19 +941,25 @@ def render_frame(canvas):
                 else:
                     text = "Ok!"
                     
-                canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, "monospace")/2, HEIGHT/2+100), 12, 'White',"monospace")
-                canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, "monospace")/2, HEIGHT/2+126), 24, 'White',"monospace")
+                canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, FONT)/2, HEIGHT/2+100), 12, 'White',FONT)
+                canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, FONT)/2, HEIGHT/2+126), 24, 'White',FONT)
 
-            canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 72, "monospace")/2, 100), 72, 'White',"monospace")
-            canvas.draw_text("Time:", (WIDTH/2-frame.get_canvas_textwidth("Time:", 30, "monospace")/2, HEIGHT/2-90), 30, 'White',"monospace")
-            canvas.draw_text(time_str, (WIDTH/2-frame.get_canvas_textwidth(time_str, 84, "monospace")/2, HEIGHT/2), 84, 'White',"monospace")
-           
-            
+            canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 72, FONT)/2, 100), 72, 'White',FONT)
+            canvas.draw_text("Time:", (WIDTH/2-frame.get_canvas_textwidth("Time:", 30, FONT)/2, HEIGHT/2-90), 30, 'White',FONT)
+            canvas.draw_text(time_str, (WIDTH/2-frame.get_canvas_textwidth(time_str, 84, FONT)/2, HEIGHT/2), 84, 'White',FONT)
+             
 def distance_to_go():    
     return int(1000-(math.sqrt( player_a.x**2 + player_a.y**2)-math.sqrt(2)*2500 )/50)-20
       
 def update_world_always(time_delta):
+    global pause, match_start_countdown
+    
     if num_players == 2:
+        
+        if pause and match_start_countdown is not None and match_start_countdown < time.time():
+            pause = False
+            match_start_countdown = None
+        
         dx = player_b.x-player_a.x
         dy = player_b.y-player_a.y
         dz = player_b.z-player_a.z
@@ -903,21 +972,16 @@ def update_world_always(time_delta):
     else:
         angle_temp = WorldAngle.angleBetweenWorldPoints(player_a, WorldPoint(0,0,0))+math.pi
         
-        
         grid.set_center(player_a[0]+math.cos(angle_temp)*600, player_a[1]+math.sin(angle_temp)*600)
         
-        
 def update_world(time_delta):
-    global left_score,right_score,running_player
+    global left_score,right_score,running_player,pause,match_start_countdown,pause
     
-
     grid.update(time_delta)
-    
     
     player_a.update(time_delta)
     if num_players == 2:
         player_b.update(time_delta)
-    
     
     if num_players == 2:
         dx = player_b.x-player_a.x
@@ -926,7 +990,6 @@ def update_world(time_delta):
         L = math.sqrt( dx**2 + dy**2 + dz**2 )
         
         l = 1000
-
 
         if player_b.z < -12000:
             left_score += 1
@@ -939,7 +1002,7 @@ def update_world(time_delta):
             return
 
         if  L < 100:
-            if running_player == 1:
+            if running_player == 0:
                 right_score += 1
                 end_multi(0,1)
             else:
@@ -1010,7 +1073,6 @@ def key_action(dt):
     if keys_down[simplegui.KEY_MAP["right"]] and num_players == 2:
         player_b.right(dt)
         
-    
     if keys_down[simplegui.KEY_MAP["s"]]:
         player_a.back(dt)
     if keys_down[simplegui.KEY_MAP["a"]]:
@@ -1020,7 +1082,6 @@ def key_action(dt):
     if keys_down[simplegui.KEY_MAP["w"]]:
          player_a.forward(dt)
 
-        
 time_list = []
 count = 0
 prev_time = time.time()
@@ -1063,23 +1124,15 @@ def game_loop(canvas):
                 grid.square_size -= 1
             else:
                 print "Warning: This computer is too slow!"
-                
-
-WIDTH = 1200
-HEIGHT = 600
 
 num_players = 2
-
-highscore = 10000000 #60 something is avery's highscore
 
 left_score = 0
 right_score = 0
     
-    
 def init():
-    global player_a, player_b, grid, left_camera, right_camera, music_restart_time, pause, green_right, green_left, red_right, red_left
+    global player_a, player_b, grid, left_camera, right_camera, music_restart_time, green_right, green_left, red_right, red_left
 
-    pause = False
     green_right = False
     green_left = False
     red_right = False
@@ -1113,18 +1166,16 @@ def init():
         random_angle = random.random()*2*math.pi
         player_a = WorldPlayer(2500.0*math.cos(random_angle), 2500.0*math.sin(random_angle), 255, 0, 0)
         
-        
-
     if num_players == 2:
         left_camera = Camera(0,0,0,  0,     0,       0,      WIDTH/2,      HEIGHT, False, True, False, False)
         right_camera = Camera(0,0,0,  0 , WIDTH/2 , 0,     WIDTH/2,      HEIGHT, True, False, False, False)
     elif num_players == 1:
         left_camera = Camera(0,0,0,  0,     0,       0,      WIDTH,      HEIGHT, False, False, False, False)
         
-    
 def init_single():
-    global num_players,time_start,random_victory_text_id,time_end
+    global num_players,time_start,random_victory_text_id,time_end,pause
     
+    pause = False
     time_start = time.time()
     time_end = None
     random_victory_text_id = random.randrange(0,10)
@@ -1132,35 +1183,32 @@ def init_single():
     num_players = 1
     init()
 
-def init_multi():
-    global num_players, running_player
+next_runner = None
     
-    running_player = random.randrange(0,2)
+def init_multi():
+    global num_players, running_player,pause,match_start_countdown,next_runner
+    
+    pause = False
+    
+    if next_runner == None:
+        running_player = random.randrange(0,2)
+    else:
+        running_player = next_runner
+        next_runner = None
+        
     num_players = 2
     init()
+    update_world(0)
+    pause = True
+    match_start_countdown = time.time()+4
     
-logo_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/logo.png")
-background_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background_round.png")
-subtitle_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/subtitle.png")
- 
     
-how_to_play_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/how_to_play.png")
-chase_mode_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/chase_mode.png")
-time_trial_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/time_trial.png")
-
-how_to_play_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/how_to_play_pressed.png")
-chase_mode_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/chase_mode_pressed.png")
-time_trial_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/time_trial_pressed.png")
-
-how_to_play_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/How%20to%20play.png")
-
-r = 0   
 
 def pass_function(x=None):
     pass
 
 def menu_mouseclick(pos):
-    global how_to_play_pressed, chase_mode_pressed, time_trial_pressed
+    global how_to_play_pressed, chase_mode_pressed, time_trial_pressed, TWO_PLAYER_ENABLED
     
     how_to_play_pressed = False
     chase_mode_pressed = False
@@ -1168,7 +1216,7 @@ def menu_mouseclick(pos):
     
     if pos[0] > 2*WIDTH/7-100-150 and pos[0] < 2*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
         init_help() 
-    if pos[0] > 4*WIDTH/7-100-150 and pos[0] < 4*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
+    if TWO_PLAYER_ENABLED and pos[0] > 4*WIDTH/7-100-150 and pos[0] < 4*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
         init_multi()
     if pos[0] > 6*WIDTH/7-100-150 and pos[0] < 6*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
         init_single()
@@ -1224,9 +1272,13 @@ def init_menu(dummy = None):
     game_music_intro.rewind()
     
 def end_multi(player_a_score, player_b_score):
-    global pause, green_right, green_left, red_right, red_left
+    global pause, green_right, green_left, red_right, red_left, next_runner
     
-    
+    if player_a_score == 1:
+        next_runner = 1
+    else:
+        next_runner = 0
+        
     if player_a_score == 1:
         green_left = True
     else:
@@ -1239,7 +1291,6 @@ def end_multi(player_a_score, player_b_score):
     pause = True
     frame.set_mouseclick_handler(click_multi_reset)
 
-
 def end_single():
     global pause, green_right, green_left, red_right, red_left,time_end, highscore
     
@@ -1248,7 +1299,6 @@ def end_single():
     
     if time_end is None:
         time_end = time.time()
-    
     
     if distance_to_go() <= 0:
         victory_sound.play()
@@ -1269,11 +1319,13 @@ def click_multi_reset(pos):
 def click_single_reset(pos):
     init_single()
     
+background_rotation = 0   
+
 def menu_handler(canvas):
-    global background_menu_image, r, how_to_play_pressed, chase_mode_pressed, time_trial_pressed
-    r += 0.001
+    global background_menu_image, background_rotation, how_to_play_pressed, chase_mode_pressed, time_trial_pressed, TWO_PLAYER_ENABLED
+    background_rotation += 0.001
     
-    canvas.draw_image(background_menu_image, ( 705/2, 718/2), ( 705, 718), (WIDTH/2, HEIGHT/2), (HEIGHT*2.5,2.5*HEIGHT), r)
+    canvas.draw_image(background_menu_image, ( 705/2, 718/2), ( 705, 718), (WIDTH/2, HEIGHT/2), (HEIGHT*2.5,2.5*HEIGHT), background_rotation)
     canvas.draw_polygon([[150, 25], [WIDTH-150, 25], [WIDTH-150, HEIGHT-425], [150, HEIGHT-425]], 12, "rgba(255,0,0,0)", "rgba(0,0,0,0.5)")
     canvas.draw_polygon([[150, HEIGHT-425], [WIDTH-150, HEIGHT-425], [WIDTH-150, HEIGHT-375], [150, HEIGHT-375]], 12, "rgba(255,0,0,0)", "rgba(255,255,255,0.5)")
     canvas.draw_image(logo_image, ( 1634/2, 266/2), ( 1634, 266), (WIDTH/2, HEIGHT/6), (1634/2,266/2))
@@ -1284,10 +1336,11 @@ def menu_handler(canvas):
     else:
         canvas.draw_image(how_to_play_image_down, ( 695/2, 168/2), ( 695, 168), (2*WIDTH/7-100,HEIGHT-100), (300,150))
     
-    if not chase_mode_pressed:    
-        canvas.draw_image(chase_mode_image, ( 655/2, 168/2), ( 655, 168), (4*WIDTH/7-100,HEIGHT-100), (300,150))
-    else:
-        canvas.draw_image(chase_mode_image_down, ( 655/2, 168/2), ( 655, 168), (4*WIDTH/7-100,HEIGHT-100), (300,150))
+    if TWO_PLAYER_ENABLED:
+        if not chase_mode_pressed:    
+            canvas.draw_image(chase_mode_image, ( 655/2, 168/2), ( 655, 168), (4*WIDTH/7-100,HEIGHT-100), (300,150))
+        else:
+            canvas.draw_image(chase_mode_image_down, ( 655/2, 168/2), ( 655, 168), (4*WIDTH/7-100,HEIGHT-100), (300,150))
      
     if not time_trial_pressed:
         canvas.draw_image(time_trial_image, ( 593/2, 168/2), ( 593, 168), (6*WIDTH/7-100,HEIGHT-100), (300,150))
@@ -1311,7 +1364,6 @@ def loading_handler(canvas):
         canvas.draw_image(loading_animation[10-blinker_counter/5-1], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
         canvas.draw_image(loading_animation[10-blinker_counter/5-2], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
      
-        
     loading_text = ""
     
     if time.time()-loading_time < 5:
@@ -1335,29 +1387,10 @@ def loading_handler(canvas):
     elif time.time()-loading_time > 90:
         loading_text = "Sorry, this is taking awhile..."
     
-    
-    canvas.draw_text(loading_text, (WIDTH/2-frame.get_canvas_textwidth(loading_text, 30,"monospace")/2, HEIGHT-150), 30,'White',"monospace")
+    canvas.draw_text(loading_text, (WIDTH/2-frame.get_canvas_textwidth(loading_text, 30,FONT)/2, HEIGHT-150), 30,'White',FONT)
         
     if time.time()-loading_time > 2 and time_trial_image_down.get_height() != 0:
         init_menu()
-
-    
 frame = simplegui.create_frame("StarChaser", WIDTH, HEIGHT)
 frame.set_draw_handler(loading_handler)
-
-
 frame.start()
-
-bounce_blue_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/bounce_blue.mp3")
-beep_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/beep_sound.mp3")
-falling_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/falling_sound.mp3")
-platform_death_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/platform_death_sound.mp3")
-victory_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/victory_fanfare.mp3")
-speed_up_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_up.mp3")
-speed_down_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_down.mp3")
-
-game_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_music_loop.ogg")
-game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_intro.ogg")
-menu_music.set_volume(0.3)
-game_music.set_volume(0.3)
-game_music_intro.set_volume(0.4)
