@@ -34,7 +34,7 @@ for i in range(1,13):
 menu_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/menu.ogg")
 menu_music.play()
 def trim_zero(points, axis, axis_n):
-        #Function from: https://paolocrosetto.wordpress.com/python-code/
+        #Below function from: https://paolocrosetto.wordpress.com/python-code/
         #I claim no rights to this function
         def check_convexity(p):
             def sign(x):
