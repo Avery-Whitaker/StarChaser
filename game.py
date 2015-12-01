@@ -1,34 +1,8 @@
-#TODO:
 '''
-stars instead of balls
-background
-music
- 
-'''
-
-''' 
-Looking for a new name for this project. If you have any ideas plese put in evaluation!
-
-Pitch Sheet: http://www.averyw.me/RunNGunPoster.pdf
-
-Description:
-2 Player game. (split-screen mulitplayer) Goal is to survive 
-longer then other player. Death currently can only occur by 
-falling off platforms. Platforms can be destroyed (currently 
-just randomly disapear).
-
-Controls: 
-Left palyer: WASD to move, space to jump
-         Right Player: Arrow Keys to move, shift to jump
-Currently Camera fixes static angle. have it working that
-camera can face other player, but dont have offset working.
-Ultimatly plan is camera alway facec other player except
-when players are close.
-
 Author Contact:
 
 please direct any questions to
-averywhitaker@rice.edu
+averywhitaker@gmail.edu
 
 Liscensed under BSD:
 
@@ -49,6 +23,8 @@ IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 '''
 
+FPS_PRINT = True
+
 import simplegui
 
 loading_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_back.png")
@@ -61,15 +37,382 @@ menu_music.play()
 import math
 import random
 import time
-import user40_QRM9liuRW8_2 as DrawEngine
+
+'''
+New version, renders things by z value! who
+cares about anything else!
+'''
+
+import math
+import random
+import simplegui
+
+def trim_zero(points, axis, axis_n):
+    
+        #Function from: https://paolocrosetto.wordpress.com/python-code/
+        #I claim no rights to this function
+        def check_convexity(p):
+            def sign(x):
+                if x >= 0: 
+                    return 1
+                else: 
+                    return 0
+            def triads(p):
+                return zip(p, p[1:]+[p[0]], p[2:]+[p[0]]+[p[1]])
+            i = 0
+            for ((x0, y0), (x1, y1), (x2,y2)) in triads(p):
+                if i==0: fsign = sign(x2*(y1-y0)-y2*(x1-x0)+(x1-x0)*y0-(y1-y0)*x0)
+                else:
+                    newsign = sign(x2*(y1-y0)-y2*(x1-x0)+(x1-x0)*y0-(y1-y0)*x0)
+                    if newsign != fsign: return False
+                i +=1
+            return True
+            
+        def intersection(point_a, point_b, axis, axis_n):
+            new_point = []
+            for i in range(0,axis_n):
+                new_point.append(0)
+            if axis_n == 3:       
+                new_point[axis-2] = (-(point_b[axis-2]-point_a[axis-2])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-2]
+                new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
+                new_point[axis] = 0
+                return [new_point[0],new_point[1],new_point[2]]
+            if axis_n == 2:
+                new_point[axis] = 0
+                new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
+                return [new_point[0],new_point[1]]
+        
+        min_num = 1000000000000
+        max_num = -1000000000000
+        for point in points:
+            if point[axis] < min_num:
+                min_num = point[axis]
+            if point[axis] > max_num:
+                max_num = point[axis]
+                
+        if min_num < 0 and max_num > 0:
+            i = 0
+            while points[i][axis] < 0:
+                i = (i+1)%len(points)
+            while points[i][axis] > 0:
+                i = (i+1)%len(points)
+
+            point_a = intersection(points[i],points[i-1],axis,axis_n)
+
+            cut_start = i
+            while points[i][axis] <= 0:
+                i = (i+1)%len(points)
+            point_b = intersection(points[i],points[i-1],axis,axis_n)
+            cut_end = i
+            if cut_start > cut_end:
+                for  i in range(cut_start,len(points)):
+                    points.pop(cut_start)
+                for  i in range(0,cut_end):
+                    points.pop(0)
+            else:
+                for i in range(cut_start,cut_end):
+                    points.pop(cut_start)
+            
+            points.insert(cut_start,point_b)
+            points.insert(cut_start,point_a)
+            
+            if not check_convexity(points):
+                points.remove(point_a)
+                points.remove(point_b)
+                points.insert(cut_start,point_a)
+                points.insert(cut_start,point_b)
+
+def trim_axis(points, n_min, n_max, axis, trim_min, trim_max):
+    if trim_min:
+        if min != 0:
+            for point in points:
+                point[axis] -= n_min
+        trim_zero(points, axis, 2)
+        if min != 0:
+            for point in points:
+                point[axis] += n_min
+                
+    if trim_max:
+        for point in points:
+            point[axis] = -(point[axis] - n_max)
+        trim_zero(points, axis, 2)
+        for point in points:
+            point[axis] = -point[axis] + n_max
+        
+def poly_trim(points, x_min, x_max, y_min, y_max, crop_left, crop_right, crop_top, crop_bot):        
+    trim_axis(points, x_min, x_max, 0, crop_left, crop_right)
+    trim_axis(points, y_min, y_max, 1, crop_top, crop_bot)
+
+class WorldAngle:
+    def __init__(self, angle_xy):
+        self.angle_xy = angle_xy
+        
+    def set_angle_xy(self, angle_xy):
+        self.angle_xy = angle_xy
+        
+    def turn_angle_xy(self, turn_amount):
+        self.angle_xy += turn_amount
+    
+    def angleBetweenWorldPoints(point_a, point_b):
+        return math.atan2(point_b[1] - point_a[1], point_b[0] - point_a[0])
+    
+class Color:
+    def rgba(self):
+        return "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(self.color_a)+")"
+    
+    def __init__(self,r,g,b,a):
+        self.color_r = r
+        self.color_g = g
+        self.color_b = b
+        self.color_a = a
+    
+class WorldPoint:
+    def __init__(self,x,y,z):
+        self.x = x
+        self.y = y
+        self.z = z
+        
+    def move(self,a,b,c):
+        self.x += a
+        self.y += b
+        self.z += c
+                
+    def set_pos(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+        
+    def __getitem__(self,key):
+        if key == 0:
+            return self.x
+        if key == 1:
+            return self.y
+        if key == 2:
+            return self.z
+        if key < 0:
+            return self[key+3]
+        
+    def transform(self,camera):
+        x = self.x - camera.x
+        old_x = x
+        y = -self.z + camera.z 
+        z = -self.y + camera.y + camera.focalLength
+        cos_xy = math.cos(camera.angle_xy)
+        sin_xy = -math.sin(camera.angle_xy)
+        x = x * cos_xy - z * sin_xy
+        z = z * cos_xy + old_x * sin_xy - camera.focalLength
+        if z == 0:
+            scale = 1000000000000.0
+        else:
+            scale = camera.focalLength/z
+        return ScreenPoint(camera.vanishingPointX + x * abs(scale), camera.vanishingPointY + y * abs(scale), self.z, -scale)
+    
+class WorldSphere(WorldPoint, Color):
+    def __init__(self, x, y, z, radius, r, g, b, a):
+        WorldPoint.__init__(self, x, y, z)
+        Color.__init__(self, r, g, b, a)
+        self.radius = radius
+        
+    def transform(self,camera):
+        s = WorldPoint.transform(self,camera)
+        return ScreenCircle(s[0],s[1],self.z,s.scale,self.radius,self.color_r,self.color_g,self.color_b,self.color_a)
+
+background_image_counter = 0
+
+background_image = []
+for i in range(1,300):
+    s = str(i)
+    while(len(s) < 3):
+        s = '0'+s
+    background_image.append(simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background/background%20"+s+".png"))
+    
+class Camera(WorldAngle, WorldPoint):
+    
+    def draw(self, canvas, world_objects):
+        global background_image,background_image_counter
+        
+        background_image_counter+= 1+int(math.sqrt(self.x**2 + self.y**2))/20000
+        
+        self.background_index = background_image_counter 
+        
+        self.background_index += 2
+        
+        while self.background_index <= 0:
+            self.background_index += 298
+        while self.background_index >= 299:
+            self.background_index -= 298
+        
+        canvas.draw_image(background_image[self.background_index], (1280/2,720/2), (1280,720), (self.screen_x+self.screen_width/2, self.screen_y+self.screen_height/2), (self.screen_width,self.screen_height))
+        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 1, 'Black', "rgba(0,0,0,0.6)")
+        
+        list = []
+        for a in world_objects:
+            if a is not None:
+                b = a.transform(self)
+                if b is not None:
+                    list.append(b)
+        list.sort()
+        for twoDPoly in list:
+            twoDPoly.draw(canvas, self)
+        
+        canvas.draw_polygon([[self.screen_x, self.screen_y], [self.screen_x+self.screen_width, self.screen_y], [self.screen_x+self.screen_width, self.screen_y+self.screen_height], [self.screen_x, self.screen_y+self.screen_height]], 2, 'Black')
+           
+    def __init__(self, x, y, z, yAngle, screen_x, screen_y, screen_width, screen_height, crop_left, crop_right, crop_top, crop_bot):
+        WorldPoint.__init__(self, x, y, z)
+        WorldAngle.__init__(self, yAngle)
+        self.screen_x = screen_x
+        self.screen_y = screen_y
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.focalLength = 300.0
+        self.vanishingPointX, self.vanishingPointY = screen_width/2.0, screen_height/2.5
+        
+        self.crop_left = crop_left
+        self.crop_right = crop_right
+        self.crop_top = crop_top
+        self.crop_bot = crop_bot
+        
+        self.background_index = 1
+    
+class WorldPoly(Color):
+    def __init__(self,points, r = random.randrange(70,100), g = random.randrange(200,255), b = random.randrange(70,100), a = 1):
+        self.points = points
+        Color.__init__(self,r,g,b,a)
+        
+    def __getitem__(self,key):
+        return self.points[key]
+    
+    def __len__(self):
+        return len(self.points)
+    
+    def transform(self, camera):
+            line_thinkness = 1
+            points = []
+            maxScale = -1000000000
+            minScale = 10000000000
+            for point in self.points:
+                points.append( point.transform(camera) )
+                if points[len(points)-1][2] > maxScale:
+                    maxScale = points[len(points)-1][2]
+                if points[len(points)-1][2] < maxScale:
+                    minScale = points[len(points)-1][2]
+            if maxScale > 0:
+                if minScale < 0:
+                    trim_zero(points, 2, 3)
+                return ScreenPoly(points, self.points[0].z, self.color_r, self.color_g, self.color_b, self.color_a )
+            return None
+        
+class ScreenPoint:
+    def __init__(self,x,y,world_z,scale):
+        self.x = x
+        self.y = y
+        self.world_z = world_z
+        self.scale = scale
+        
+    def __getitem__(self,key):
+        if key == 0:
+            return self.x
+        if key == 1:
+            return self.y
+        if key == 2:
+            return self.scale
+        if key < 0:
+            return self[key+2]
+            
+    def __cmp__(self, other):
+        if self.world_z < other.world_z:
+            return -1
+        elif self.world_z == other.world_z:
+            return 0
+        return 1
+    
+player_image_a = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a.png")
+player_image_b = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b.png")
+player_image_a_speedup = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a_speed.png")
+player_image_b_speedup = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b_speed.png")
+rotate = 0
+    
+class ScreenCircle(ScreenPoint, Color):
+    def __init__(self,x,y,world_z,scale,radius, r,g,b,a):
+        ScreenPoint.__init__(self,x,y,world_z,scale)
+        Color.__init__(self,r,g,b,a)
+        self.radius = radius
+        self.world_z = world_z
+        
+    def __cmp__(self, other):
+        if self.world_z < other.world_z:
+            return -1
+        elif self.world_z == other.world_z:
+            return 0
+        return 1
+            
+    def draw(self, canvas, camera):
+        global rotate
+        
+        if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
+            if self.color_b == 255:
+                if self.color_g != 255:
+                    canvas.draw_image(player_image_a_speedup, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                else:
+                    canvas.draw_image(player_image_a, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+            else:
+                rotate += 0.05
+                if self.color_g != 255:
+                    canvas.draw_image(player_image_b, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                else:
+                    canvas.draw_image(player_image_b_speedup, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), rotate)
+                    
+class ScreenPoly:
+    def __init__(self, points, world_z, color_r, color_g, color_b, color_a):
+        self.color_r = color_r
+        self.color_g = color_g
+        self.color_b = color_b
+        self.color_a = color_a
+        
+        self.points = points
+        self.world_z = world_z
+        
+    def __getitem__(self,key):
+        return list[key]
+        
+    def __cmp__(self, other):
+        if self.world_z < other.world_z:
+            return -1
+        elif self.world_z == other.world_z:
+            return 0
+        return 1
+            
+    def draw(self, canvas, camera):
+        new = []
+        for point in self.points:
+            new.append([point[0]+camera.screen_x, point[1]+camera.screen_y])
+        minX = 10000000000
+        maxX = -10000000000
+        minY = 1000000000
+        maxY = -10000000000
+        for point in new:
+            if point[0] < minX:
+                minX = point[0]
+            if point[1] < minY:
+                minY = point[1]
+            if point[0] > maxX:
+                maxX = point[0]
+            if point[1] > maxY:
+                maxY = point[1]
+        if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
+            poly_trim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height,camera.crop_left,camera.crop_right,camera.crop_top,camera.crop_bot)
+            canvas.draw_polygon(new, 1, "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")","rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(self.color_a)+")")
+
+        
+
 import codeskulptor
     
     
     
-class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
+class WorldPlayer(WorldSphere, WorldAngle):
     def __init__(self,x,y,r,b,g):
-        DrawEngine.WorldSphere.__init__(self, x, y, 600, 30, r,g,b,1)
-        DrawEngine.WorldAngle.__init__(self, 0)
+        WorldSphere.__init__(self, x, y, 600, 30, r,g,b,1)
+        WorldAngle.__init__(self, 0)
         self.z_vel = 20
         self.radius = 30
         self.speed = 800
@@ -104,9 +447,9 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
         
         moving_ground_z = grid.grid_prev_height(self.x,self.y)+self.radius
         
-        if self.z_vel >= 0: #if going up
+        if self.z_vel >= 0:
              self.z += self.z_vel*time_delta
-        elif self.z == ground_z or self.z == moving_ground_z: #if sitting on ground
+        elif self.z == ground_z or self.z == moving_ground_z:
             self.z = ground_z
             grid.get_item(self.x,self.y).stand_damage(time_delta)
             
@@ -119,7 +462,7 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
             self.speed_mod = grid.get_item(self.x,self.y).speed_mod
             
             self.z_vel = 0
-        elif self.z >= ground_z and self.z + self.z_vel*time_delta < ground_z: #if falling into ground
+        elif self.z >= ground_z and self.z + self.z_vel*time_delta < ground_z:
             self.z = ground_z
             if grid.get_item(self.x,self.y).is_bouncy():
                             
@@ -149,7 +492,7 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
             self.speed_mod = grid.get_item(self.x,self.y).speed_mod
             
             self.z_vel = 0
-        else:#else falling into space
+        else:
             self.z += self.z_vel*time_delta
         
         self.z_vel -= 1200*time_delta
@@ -225,10 +568,10 @@ class WorldPlayer(DrawEngine.WorldSphere, DrawEngine.WorldAngle):
             return None
         
         for i in range(0,n):
-            points.append(DrawEngine.WorldPoint(self.x+50*math.cos(angle),self.y+50*math.sin(angle),grid.grid_height(self.x,self.y)))
+            points.append(WorldPoint(self.x+50*math.cos(angle),self.y+50*math.sin(angle),grid.grid_height(self.x,self.y)))
             angle+=(math.pi*2)/n
             
-        return DrawEngine.WorldPoly(points, 20, 20, 20)
+        return WorldPoly(points, 20, 20, 20)
 
 class GridSquare:
     def __init__(self, height, x, y, world_poly = None, level = 0):
@@ -238,12 +581,7 @@ class GridSquare:
         
         self.height = height
         self.prev_height = -10000
-        
-        #types of squares:
-        #0 - normal
-        #1 - bouncy
-        #2 - up/down
-        #3 - disapear
+
         
         self.x = x
         self.y = y
@@ -261,7 +599,7 @@ class GridSquare:
         self.min_height = self.height-200
         self.max_height = self.height+200
         if type == 2:
-            self.direction = (random.randrange(0,2)*2)-1 #-1 or 1
+            self.direction = (random.randrange(0,2)*2)-1
         
         self.health = None
         if type == 3:
@@ -382,10 +720,10 @@ class Grid:
                     else:
                         level = random.randrange(0,2)
                     height = self.tile_size/4*level
-                    self.objects[x][y]=GridSquare(height, x, y, DrawEngine.WorldPoly([DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size, self.tile_size/2+y*self.tile_size, height),
-                                                 DrawEngine.WorldPoint(-self.tile_size/2+x*self.tile_size,                self.tile_size/2+y*self.tile_size, height),
-                                                 DrawEngine.WorldPoint(-self.tile_size/2+x*self.tile_size,                -self.tile_size/2+y*self.tile_size, height), 
-                                                 DrawEngine.WorldPoint(self.tile_size/2+x*self.tile_size,  -self.tile_size/2+y*self.tile_size, height)]), level)
+                    self.objects[x][y]=GridSquare(height, x, y, WorldPoly([WorldPoint(self.tile_size/2+x*self.tile_size, self.tile_size/2+y*self.tile_size, height),
+                                                 WorldPoint(-self.tile_size/2+x*self.tile_size,                self.tile_size/2+y*self.tile_size, height),
+                                                 WorldPoint(-self.tile_size/2+x*self.tile_size,                -self.tile_size/2+y*self.tile_size, height), 
+                                                 WorldPoint(self.tile_size/2+x*self.tile_size,  -self.tile_size/2+y*self.tile_size, height)]), level)
                 else:
                     self.objects[x][y]=GridSquare(-100000, x, y)
          
@@ -417,7 +755,7 @@ class Grid:
     def to_list(self):
         list = []
         for x,y in self.x_y_range():
-            list.append(self.objects[x][y]) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            list.append(self.objects[x][y])
         return list
 
 def render_frame(canvas):
@@ -575,7 +913,6 @@ def render_frame(canvas):
             
 def distance_to_go():    
     return int(1000-(math.sqrt( player_a.x**2 + player_a.y**2)-math.sqrt(2)*2500 )/50)-20
-    #return int(10-(math.sqrt( player_a.x**2 + player_a.y**2)-math.sqrt(2)*2500 )/50)
       
 def update_world_always(time_delta):
     if num_players == 2:
@@ -583,16 +920,13 @@ def update_world_always(time_delta):
         dy = player_b.y-player_a.y
         dz = player_b.z-player_a.z
         L = math.sqrt( dx**2 + dy**2 + dz**2 )
-        
-        #angle_temp = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, player_b)+math.pi
-        #grid.set_center(player_b[0]+math.cos(angle_temp)*0.666*L, player_b[1]+math.sin(angle_temp)*0.666*L)
-        
+       
         if running_player == 0:
             grid.set_center(player_a[0], player_a[1])
         else:
             grid.set_center(player_b[0], player_b[1])
     else:
-        angle_temp = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, DrawEngine.WorldPoint(0,0,0))+math.pi
+        angle_temp = WorldAngle.angleBetweenWorldPoints(player_a, WorldPoint(0,0,0))+math.pi
         
         
         grid.set_center(player_a[0]+math.cos(angle_temp)*600, player_a[1]+math.sin(angle_temp)*600)
@@ -638,8 +972,8 @@ def update_world(time_delta):
                 end_multi(1,0)
             return
     
-        angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, DrawEngine.WorldPoint(0,0,0))+math.pi
-        angle_b = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_b, DrawEngine.WorldPoint(0,0,0))+math.pi
+        angle_a = WorldAngle.angleBetweenWorldPoints(player_a, WorldPoint(0,0,0))+math.pi
+        angle_b = WorldAngle.angleBetweenWorldPoints(player_b, WorldPoint(0,0,0))+math.pi
 
         player_a.set_angle_xy(math.pi/2-angle_a)
         player_b.set_angle_xy(math.pi/2-angle_b)
@@ -654,7 +988,7 @@ def update_world(time_delta):
             end_single()
             return
             
-        angle_a = DrawEngine.WorldAngle.angleBetweenWorldPoints(player_a, DrawEngine.WorldPoint(0,0,0))+math.pi
+        angle_a = WorldAngle.angleBetweenWorldPoints(player_a, WorldPoint(0,0,0))+math.pi
         player_a.set_angle_xy(math.pi/2-angle_a)
         left_camera.set_angle_xy(player_a.angle_xy)
         l = 1000
@@ -721,14 +1055,12 @@ def game_loop(canvas):
     dt = time.time() - prev_time
     prev_time = time.time()
     
-    #handle music
     if not pause and prev_time > music_restart_time:
         game_music_intro.rewind()
         game_music.rewind()
         game_music.play()
         music_restart_time = prev_time + 42.6634
         
-    ##main Stuff
     update_world_always(dt)
     if not pause:
         update_world(dt)
@@ -736,7 +1068,6 @@ def game_loop(canvas):
     if not pause:
         key_action(dt)
     
-    #FPS Stuff
     time_list.append(dt)
     if(len(time_list) > 20):
         time_list.pop(0)
@@ -747,8 +1078,9 @@ def game_loop(canvas):
     count+=1
     if count%20==0:
         fps= 1/avg_time
-        #print "FPS: " + str(int(10/avg_time)/10)
-        #print "GRID SIZE: " + str(grid.square_size**2)
+        if FPS_PRINT:
+            print "FPS: " + str(int(10/avg_time)/10)
+            print "GRID SIZE: " + str(grid.square_size**2)
         if fps > 20:
             grid.square_size += 1
         elif fps < 15:
@@ -763,7 +1095,7 @@ HEIGHT = 600
 
 num_players = 2
 
-highscore = 10000000 #80.7 is avery's highscore
+highscore = 10000000 #60 something is avery's highscore
 
 left_score = 0
 right_score = 0
@@ -809,10 +1141,10 @@ def init():
         
 
     if num_players == 2:
-        left_camera = DrawEngine.Camera(0,0,0,  0,     0,       0,      WIDTH/2,      HEIGHT, False, True, False, False)
-        right_camera = DrawEngine.Camera(0,0,0,  0 , WIDTH/2 , 0,     WIDTH/2,      HEIGHT, True, False, False, False)
+        left_camera = Camera(0,0,0,  0,     0,       0,      WIDTH/2,      HEIGHT, False, True, False, False)
+        right_camera = Camera(0,0,0,  0 , WIDTH/2 , 0,     WIDTH/2,      HEIGHT, True, False, False, False)
     elif num_players == 1:
-        left_camera = DrawEngine.Camera(0,0,0,  0,     0,       0,      WIDTH,      HEIGHT, False, False, False, False)
+        left_camera = Camera(0,0,0,  0,     0,       0,      WIDTH,      HEIGHT, False, False, False, False)
         
     
 def init_single():
@@ -833,7 +1165,7 @@ def init_multi():
     init()
     
 logo_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/logo.png")
-background_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background_round.png")
+background_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/background_round.png")
 subtitle_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/subtitle.png")
  
     
@@ -844,6 +1176,8 @@ time_trial_image = simplegui.load_image("https://github.com/Avery-Whitaker/Pytho
 how_to_play_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/how_to_play_pressed.png")
 chase_mode_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/chase_mode_pressed.png")
 time_trial_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/time_trial_pressed.png")
+
+how_to_play_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/How%20to%20play.png")
 
 r = 0   
 
@@ -858,7 +1192,6 @@ def menu_mouseclick(pos):
     time_trial_pressed = False
     
     if pos[0] > 2*WIDTH/7-100-150 and pos[0] < 2*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
-        print "this feature is not yet implamented!"
         init_help() 
     if pos[0] > 4*WIDTH/7-100-150 and pos[0] < 4*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
         init_multi()
@@ -879,7 +1212,17 @@ def menu_mousedrag(pos):
     if pos[0] > 6*WIDTH/7-100-150 and pos[0] < 6*WIDTH/7-100+150 and pos[1] > HEIGHT-100-75 and pos[1] < HEIGHT-100+75:
         time_trial_pressed = True
     
-def init_menu():
+def help_draw(canvas):
+    canvas.draw_image(how_to_play_menu_image, (WIDTH/2, HEIGHT/2), (WIDTH, HEIGHT), (WIDTH/2, HEIGHT/2), (WIDTH, HEIGHT))
+    
+def init_help():
+    frame.set_draw_handler(help_draw)
+    frame.set_keydown_handler(init_menu)
+    frame.set_keyup_handler(init_menu)
+    frame.set_mouseclick_handler(init_menu)
+    frame.set_mousedrag_handler(init_menu)
+    
+def init_menu(dummy = None):
     global how_to_play_pressed, chase_mode_pressed, time_trial_pressed, left_score, right_score
     
     left_score = 0
@@ -920,7 +1263,6 @@ def end_multi(player_a_score, player_b_score):
         red_right = True
     pause = True
     frame.set_mouseclick_handler(click_multi_reset)
-    #init_multi()
 
 
 def end_single():
@@ -953,18 +1295,15 @@ def click_single_reset(pos):
     init_single()
     
 def menu_handler(canvas):
-    global background_image, r, how_to_play_pressed, chase_mode_pressed, time_trial_pressed
+    global background_menu_image, r, how_to_play_pressed, chase_mode_pressed, time_trial_pressed
     r += 0.001
     
-   
-    canvas.draw_image(background_image, ( 705/2, 718/2), ( 705, 718), (WIDTH/2, HEIGHT/2), (HEIGHT*2.5,2.5*HEIGHT), r)
+    canvas.draw_image(background_menu_image, ( 705/2, 718/2), ( 705, 718), (WIDTH/2, HEIGHT/2), (HEIGHT*2.5,2.5*HEIGHT), r)
     canvas.draw_polygon([[150, 25], [WIDTH-150, 25], [WIDTH-150, HEIGHT-425], [150, HEIGHT-425]], 12, "rgba(255,0,0,0)", "rgba(0,0,0,0.5)")
     canvas.draw_polygon([[150, HEIGHT-425], [WIDTH-150, HEIGHT-425], [WIDTH-150, HEIGHT-375], [150, HEIGHT-375]], 12, "rgba(255,0,0,0)", "rgba(255,255,255,0.5)")
     canvas.draw_image(logo_image, ( 1634/2, 266/2), ( 1634, 266), (WIDTH/2, HEIGHT/6), (1634/2,266/2))
     canvas.draw_image(subtitle_image, ( 1733/2, 80/2), ( 1733, 80), (WIDTH/2, HEIGHT/3), (1733/2,80/2))
      
-    
-    
     if not how_to_play_pressed:
         canvas.draw_image(how_to_play_image, ( 695/2, 168/2), ( 695, 168), (2*WIDTH/7-100,HEIGHT-100), (300,150))
     else:
@@ -979,9 +1318,7 @@ def menu_handler(canvas):
         canvas.draw_image(time_trial_image, ( 593/2, 168/2), ( 593, 168), (6*WIDTH/7-100,HEIGHT-100), (300,150))
     else:
         canvas.draw_image(time_trial_image_down, ( 593/2, 168/2), ( 593, 168), (6*WIDTH/7-100,HEIGHT-100), (300,150))
-    
-    #booting
-        
+
 blinker_counter = 0
 
 loading_time = time.time()
@@ -1033,9 +1370,6 @@ def loading_handler(canvas):
 frame = simplegui.create_frame("StarChaser", WIDTH, HEIGHT)
 frame.set_draw_handler(loading_handler)
 
-#reset_button = frame.add_button('Multiplayer', init_multi)
-#reset_button = frame.add_button('Single Player', init_single)
-#menu_button = frame.add_button('Menu', init_menu)
 
 frame.start()
 
