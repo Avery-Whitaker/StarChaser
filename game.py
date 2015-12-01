@@ -24,31 +24,17 @@ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 '''
 
 FPS_PRINT = True
-
-import simplegui
-
 loading_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_back.png")
 loading_animation = []
 for i in range(1,13):
     loading_animation.append(simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_"+str(i)+".png"))
 menu_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/menu.ogg")
 menu_music.play()
-
 import math
 import random
 import time
-
-'''
-New version, renders things by z value! who
-cares about anything else!
-'''
-
-import math
-import random
 import simplegui
-
 def trim_zero(points, axis, axis_n):
-    
         #Function from: https://paolocrosetto.wordpress.com/python-code/
         #I claim no rights to this function
         def check_convexity(p):
@@ -67,7 +53,6 @@ def trim_zero(points, axis, axis_n):
                     if newsign != fsign: return False
                 i +=1
             return True
-            
         def intersection(point_a, point_b, axis, axis_n):
             new_point = []
             for i in range(0,axis_n):
@@ -81,24 +66,20 @@ def trim_zero(points, axis, axis_n):
                 new_point[axis] = 0
                 new_point[axis-1] = (-(point_b[axis-1]-point_a[axis-1])/(point_b[axis]-point_a[axis]))*point_a[axis]  + point_a[axis-1]
                 return [new_point[0],new_point[1]]
-        
         min_num = 1000000000000
         max_num = -1000000000000
         for point in points:
             if point[axis] < min_num:
                 min_num = point[axis]
             if point[axis] > max_num:
-                max_num = point[axis]
-                
+                max_num = point[axis]  
         if min_num < 0 and max_num > 0:
             i = 0
             while points[i][axis] < 0:
                 i = (i+1)%len(points)
             while points[i][axis] > 0:
                 i = (i+1)%len(points)
-
             point_a = intersection(points[i],points[i-1],axis,axis_n)
-
             cut_start = i
             while points[i][axis] <= 0:
                 i = (i+1)%len(points)
@@ -112,16 +93,13 @@ def trim_zero(points, axis, axis_n):
             else:
                 for i in range(cut_start,cut_end):
                     points.pop(cut_start)
-            
             points.insert(cut_start,point_b)
             points.insert(cut_start,point_a)
-            
             if not check_convexity(points):
                 points.remove(point_a)
                 points.remove(point_b)
                 points.insert(cut_start,point_a)
                 points.insert(cut_start,point_b)
-
 def trim_axis(points, n_min, n_max, axis, trim_min, trim_max):
     if trim_min:
         if min != 0:
@@ -130,19 +108,17 @@ def trim_axis(points, n_min, n_max, axis, trim_min, trim_max):
         trim_zero(points, axis, 2)
         if min != 0:
             for point in points:
-                point[axis] += n_min
-                
+                point[axis] += n_min  
     if trim_max:
         for point in points:
             point[axis] = -(point[axis] - n_max)
         trim_zero(points, axis, 2)
         for point in points:
             point[axis] = -point[axis] + n_max
-        
 def poly_trim(points, x_min, x_max, y_min, y_max, crop_left, crop_right, crop_top, crop_bot):        
     trim_axis(points, x_min, x_max, 0, crop_left, crop_right)
     trim_axis(points, y_min, y_max, 1, crop_top, crop_bot)
-
+    
 class WorldAngle:
     def __init__(self, angle_xy):
         self.angle_xy = angle_xy
@@ -1380,20 +1356,9 @@ platform_death_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/P
 victory_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/victory_fanfare.mp3")
 speed_up_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_up.mp3")
 speed_down_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_down.mp3")
-    
+
 game_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_music_loop.ogg")
 game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_intro.ogg")
 menu_music.set_volume(0.3)
 game_music.set_volume(0.3)
 game_music_intro.set_volume(0.4)
-
-
-
-'''
-Game State:
-0 - main menu
-1 - single player
-2 - two player
-
-
-'''
