@@ -5,7 +5,7 @@
 #I keep two player mode as a feat of technical prowess.
 #Single player is where the fun is!
 #I recommend disableing two player for published versions.
-TWO_PLAYER_ENABLED = False
+TWO_PLAYER_ENABLED = True
 
 #Print FPS and number of tiles rendered
 FPS_PRINT = False
