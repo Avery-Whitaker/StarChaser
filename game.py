@@ -1017,7 +1017,7 @@ def loading_handler(canvas):
     elif time.time()-loading_time > 60 and time.time()-loading_time < 65:
         loading_text = "The wait will be worth it..."
     elif time.time()-loading_time > 70 and time.time()-loading_time < 75:
-        loading_text = "Browers arn't very fast..."
+        loading_text = "Browsers arn't very fast..."
     elif time.time()-loading_time > 80 and time.time()-loading_time < 85:
         loading_text = "Almost there..."
     elif time.time()-loading_time > 90:
