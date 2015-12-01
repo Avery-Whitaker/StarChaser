@@ -1,3 +1,24 @@
+#Please don't grade me on two player mode, single player is better
+#Two player mode can be disabled with the below constant
+
+
+#I keep two player mode as a feat of technical prowess.
+#Single player is where the fun is!
+#I recommend disableing two player for published versions.
+TWO_PLAYER_ENABLED = True
+
+#Print FPS and number of tiles rendered
+FPS_PRINT = False
+
+#Set music volume between 0.0 and 1.0
+MUSIC_VOLUME = 0.2
+SOUND_VOLUME = 1
+
+#Set a default highscore or leave at 10000000 for no initial highscore
+highscore = 10000000
+
+FONT = "monospace"
+
 '''
 Welcome to StarChaser! A 3D platformer built in a 2D game
 engine. Dveloped by Avery Whitaker for COMP 140:
@@ -121,6 +142,10 @@ HEIGHT = 600
 import math
 import random
 import time
+<<<<<<< HEAD:StarChaser.py
+=======
+import simplegui
+>>>>>>> origin/master:game.py
 loading_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_back.png")
 loading_animation = []
 for i in range(1,13):
@@ -169,6 +194,7 @@ platform_death_sound.set_volume(SOUND_VOLUME)
 falling_sound.set_volume(SOUND_VOLUME)
 beep_sound.set_volume(SOUND_VOLUME)
 bounce_blue_sound.set_volume(SOUND_VOLUME)
+<<<<<<< HEAD:StarChaser.py
 background_image_counter = 0
 player_rotate = 0
 keys_down = {}
@@ -185,6 +211,8 @@ left_score = 0
 right_score = 0
 background_rotation = 0   
 frame = simplegui.create_frame("StarChaser", WIDTH, HEIGHT)
+=======
+>>>>>>> origin/master:game.py
 
 def trim_zero(points, axis, axis_n):
         #Below function from: https://paolocrosetto.wordpress.com/python-code/
@@ -345,10 +373,19 @@ class WorldSphere(WorldPoint, Color):
         s = WorldPoint.transform(self,camera)
         return ScreenCircle(s[0],s[1],self.z,s.scale,self.radius,self.color_r,self.color_g,self.color_b,self.color_a)
 
+<<<<<<< HEAD:StarChaser.py
+=======
+background_image_counter = 0
+
+>>>>>>> origin/master:game.py
 class Camera(WorldAngle, WorldPoint):
     
     def draw(self, canvas, world_objects):
         global background_image, background_image_counter
+<<<<<<< HEAD:StarChaser.py
+=======
+        
+>>>>>>> origin/master:game.py
         background_image_counter+= 1+int(math.sqrt(self.x**2 + self.y**2))/20000
         self.background_index = background_image_counter 
         self.background_index += 2
@@ -436,6 +473,11 @@ class ScreenPoint:
             return 0
         return 1
     
+<<<<<<< HEAD:StarChaser.py
+=======
+player_rotate = 0
+    
+>>>>>>> origin/master:game.py
 class ScreenCircle(ScreenPoint, Color):
     def __init__(self,x,y,world_z,scale,radius, r,g,b,a):
         ScreenPoint.__init__(self,x,y,world_z,scale)
@@ -452,6 +494,10 @@ class ScreenCircle(ScreenPoint, Color):
             
     def draw(self, canvas, camera):
         global player_rotate
+<<<<<<< HEAD:StarChaser.py
+=======
+        
+>>>>>>> origin/master:game.py
         if self.scale > 0 and self.x > 0 and self.y > 0 and self.x < camera.screen_width and self.y < camera.screen_height :
             if self.color_b == 255:
                 if self.color_g != 255:
@@ -535,6 +581,10 @@ class WorldPlayer(WorldSphere, WorldAngle):
         while len(self.prev_loc) > 0 and self.prev_loc[0][3] > 0.3:
             self.prev_loc.pop(0)
         ground_z = grid.grid_height(self.x,self.y)+self.radius
+<<<<<<< HEAD:StarChaser.py
+=======
+        
+>>>>>>> origin/master:game.py
         moving_ground_z = grid.grid_prev_height(self.x,self.y)+self.radius
         if self.z_vel >= 0:
              self.z += self.z_vel*time_delta
@@ -591,6 +641,10 @@ class WorldPlayer(WorldSphere, WorldAngle):
         ground_z = grid.grid_height(self.x,self.y)+self.radius
         prev_ground_z = grid.grid_height(prev_x,prev_y)+self.radius
         moving_ground_z = grid.grid_prev_height(self.x,self.y)+self.radius
+<<<<<<< HEAD:StarChaser.py
+=======
+        
+>>>>>>> origin/master:game.py
         if self.z == ground_z or self.z == moving_ground_z or (prev_z >= prev_ground_z and prev_z < self.radius/2+prev_ground_z) and grid.get_item(self.x,self.y) is not None:
             grid.get_item(self.x,self.y).jump_damage()
             if self.speed_mod < grid.get_item(self.x,self.y).speed_mod:
@@ -649,9 +703,18 @@ class GridSquare:
         self.level = level
         self.height = height
         self.prev_height = -10000
+<<<<<<< HEAD:StarChaser.py
         self.sound_played = False
         self.x = x
         self.y = y
+=======
+
+        self.sound_played = False
+        
+        self.x = x
+        self.y = y
+        
+>>>>>>> origin/master:game.py
         type = 0
         if random.random() > 0.75 and math.sqrt(x**2+y**2) > 20: #if special
             type = random.randrange(1,5)
@@ -691,6 +754,10 @@ class GridSquare:
                 self.world_poly.color_b = int(0*(0.75+self.level/4.0))
     
     def update(self, time_delta):   
+<<<<<<< HEAD:StarChaser.py
+=======
+            
+>>>>>>> origin/master:game.py
         if self.world_poly is not None:  
             self.world_poly.color_a += time_delta*0.9
             if self.world_poly.color_a > 1:
@@ -808,6 +875,10 @@ class Grid:
 
 def render_frame(canvas):
     global game_over, left_score, right_score, random_victory_text_id, match_start_countdown,running_player
+<<<<<<< HEAD:StarChaser.py
+=======
+
+>>>>>>> origin/master:game.py
     render_objects = grid.to_list()
     render_objects.append(player_a)
     if num_players == 2:
@@ -833,6 +904,10 @@ def render_frame(canvas):
         y_bot = HEIGHT
         canvas.draw_polygon([[x_left, y_bot], [x_right, y_bot], [x_right, y_top], [x_left, y_top]], 1, "rgba(0,0,0,0)", "rgba(0,0,0,0.5)")
         canvas.draw_text("Click to Restart", (x_left+12, HEIGHT - 36), 24, 'White', FONT)
+<<<<<<< HEAD:StarChaser.py
+=======
+        
+>>>>>>> origin/master:game.py
     if red_left and red_right:
         if distance_to_go() > 1000:
             text = "...Wrong way...."
@@ -900,19 +975,36 @@ def render_frame(canvas):
             else:
                 text = "..."
         canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 50,FONT)/2, 150), 50,'White',FONT)
+<<<<<<< HEAD:StarChaser.py
+=======
+           
+>>>>>>> origin/master:game.py
     if num_players == 2:
         current_time = time.time()
         if match_start_countdown > current_time:
             text = str(int(match_start_countdown-current_time))
             canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 120, FONT)/2, HEIGHT/2), 120, 'Yellow',FONT)
+<<<<<<< HEAD:StarChaser.py
+=======
+            
+>>>>>>> origin/master:game.py
             if running_player == 0:
                 text_left = "Runner"
                 text_right = "Tagger"
             if running_player == 1:
                 text_left = "Tagger"
                 text_right = "Runner"
+<<<<<<< HEAD:StarChaser.py
             canvas.draw_text(text_left, (WIDTH/4-frame.get_canvas_textwidth(text_left, 40, FONT)/2, HEIGHT/8), 40, 'White',FONT)
             canvas.draw_text(text_right, (3*WIDTH/4-frame.get_canvas_textwidth(text_right, 40, FONT)/2, HEIGHT/8), 40, 'White',FONT)
+=======
+                
+            canvas.draw_text(text_left, (WIDTH/4-frame.get_canvas_textwidth(text_left, 40, FONT)/2, HEIGHT/8), 40, 'White',FONT)
+            canvas.draw_text(text_right, (3*WIDTH/4-frame.get_canvas_textwidth(text_right, 40, FONT)/2, HEIGHT/8), 40, 'White',FONT)
+
+        
+        
+>>>>>>> origin/master:game.py
         canvas.draw_text(str(left_score), (30, 30), 24, 'White', FONT)
         canvas.draw_text(str(right_score), (WIDTH-30, 30), 24, 'White', FONT)
     else:
@@ -923,11 +1015,22 @@ def render_frame(canvas):
         if distance_to_go() > 0:
             canvas.draw_text("Distance", (0, 25), 24, 'White',FONT)
             canvas.draw_text(str(distance_to_go()), (0, 53), 36, 'White',FONT)
+<<<<<<< HEAD:StarChaser.py
             if highscore != 10000000:
                 canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, FONT)/2, 14), 12, 'White',FONT)
                 canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, FONT)/2, 38), 24, 'White',FONT)
             canvas.draw_text("Time", (1140, 25), 24, 'White',FONT)
             canvas.draw_text(time_str, (1200-frame.get_canvas_textwidth(time_str, 36, FONT), 53), 36, 'White',FONT)
+=======
+   
+            if highscore != 10000000:
+                canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, FONT)/2, 14), 12, 'White',FONT)
+                canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, FONT)/2, 38), 24, 'White',FONT)
+
+            canvas.draw_text("Time", (1140, 25), 24, 'White',FONT)
+            canvas.draw_text(time_str, (1200-frame.get_canvas_textwidth(time_str, 36, FONT), 53), 36, 'White',FONT)
+            
+>>>>>>> origin/master:game.py
         else:
             if highscore == time_end-time_start:
                 text = "New Record!"
@@ -952,8 +1055,15 @@ def render_frame(canvas):
                     text = "Adequate!"
                 else:
                     text = "Ok!"
+<<<<<<< HEAD:StarChaser.py
                 canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, FONT)/2, HEIGHT/2+100), 12, 'White',FONT)
                 canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, FONT)/2, HEIGHT/2+126), 24, 'White',FONT)
+=======
+                    
+                canvas.draw_text("Best Time", (WIDTH/2-frame.get_canvas_textwidth("Best Time", 12, FONT)/2, HEIGHT/2+100), 12, 'White',FONT)
+                canvas.draw_text(str(int(highscore*10)/10.0), (WIDTH/2-frame.get_canvas_textwidth(str(int(highscore*10)/10.0), 24, FONT)/2, HEIGHT/2+126), 24, 'White',FONT)
+
+>>>>>>> origin/master:game.py
             canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 72, FONT)/2, 100), 72, 'White',FONT)
             canvas.draw_text("Time:", (WIDTH/2-frame.get_canvas_textwidth("Time:", 30, FONT)/2, HEIGHT/2-90), 30, 'White',FONT)
             canvas.draw_text(time_str, (WIDTH/2-frame.get_canvas_textwidth(time_str, 84, FONT)/2, HEIGHT/2), 84, 'White',FONT)
@@ -963,10 +1073,20 @@ def distance_to_go():
       
 def update_world_always(time_delta):
     global pause, match_start_countdown
+<<<<<<< HEAD:StarChaser.py
     if num_players == 2:
         if pause and match_start_countdown is not None and match_start_countdown < time.time():
             pause = False
             match_start_countdown = None
+=======
+    
+    if num_players == 2:
+        
+        if pause and match_start_countdown is not None and match_start_countdown < time.time():
+            pause = False
+            match_start_countdown = None
+        
+>>>>>>> origin/master:game.py
         dx = player_b.x-player_a.x
         dy = player_b.y-player_a.y
         dz = player_b.z-player_a.z
@@ -977,20 +1097,38 @@ def update_world_always(time_delta):
             grid.set_center(player_b[0], player_b[1])
     else:
         angle_temp = WorldAngle.angleBetweenWorldPoints(player_a, WorldPoint(0,0,0))+math.pi
+<<<<<<< HEAD:StarChaser.py
+=======
+        
+>>>>>>> origin/master:game.py
         grid.set_center(player_a[0]+math.cos(angle_temp)*600, player_a[1]+math.sin(angle_temp)*600)
         
 def update_world(time_delta):
     global left_score,right_score,running_player,pause,match_start_countdown,pause
+<<<<<<< HEAD:StarChaser.py
     grid.update(time_delta)
     player_a.update(time_delta)
     if num_players == 2:
         player_b.update(time_delta)
+=======
+    
+    grid.update(time_delta)
+    
+    player_a.update(time_delta)
+    if num_players == 2:
+        player_b.update(time_delta)
+    
+>>>>>>> origin/master:game.py
     if num_players == 2:
         dx = player_b.x-player_a.x
         dy = player_b.y-player_a.y
         dz = player_b.z-player_a.z
         L = math.sqrt( dx**2 + dy**2 + dz**2 )
         l = 1000
+<<<<<<< HEAD:StarChaser.py
+=======
+
+>>>>>>> origin/master:game.py
         if player_b.z < -12000:
             left_score += 1
             end_multi(1,0)
@@ -1055,7 +1193,12 @@ def key_action(dt):
         player_b.left(dt)
     if keys_down[BUTTON_PLAYER_B_RIGHT] and num_players == 2:
         player_b.right(dt)
+<<<<<<< HEAD:StarChaser.py
     if keys_down[BUTTON_PLAYER_A_DOWN]:
+=======
+        
+    if keys_down[simplegui.KEY_MAP["s"]]:
+>>>>>>> origin/master:game.py
         player_a.back(dt)
     if keys_down[BUTTON_PLAYER_A_LEFT]:
         player_a.left(dt)
@@ -1064,6 +1207,13 @@ def key_action(dt):
     if keys_down[BUTTON_PLAYER_A_UP]:
          player_a.forward(dt)
 
+<<<<<<< HEAD:StarChaser.py
+=======
+time_list = []
+count = 0
+prev_time = time.time()
+    
+>>>>>>> origin/master:game.py
 def game_loop(canvas):
     global count, prev_time,music_restart_time, pause
     dt = time.time() - prev_time
@@ -1099,9 +1249,21 @@ def game_loop(canvas):
                 grid.square_size -= 1
             else:
                 print "Warning: This computer is too slow!"
+<<<<<<< HEAD:StarChaser.py
     
 def init():
     global player_a, player_b, grid, left_camera, right_camera, music_restart_time, green_right, green_left, red_right, red_left
+=======
+
+num_players = 2
+
+left_score = 0
+right_score = 0
+    
+def init():
+    global player_a, player_b, grid, left_camera, right_camera, music_restart_time, green_right, green_left, red_right, red_left
+
+>>>>>>> origin/master:game.py
     green_right = False
     green_left = False
     red_right = False
@@ -1128,6 +1290,10 @@ def init():
     else:
         random_angle = random.random()*2*math.pi
         player_a = WorldPlayer(2500.0*math.cos(random_angle), 2500.0*math.sin(random_angle), 255, 0, 0)
+<<<<<<< HEAD:StarChaser.py
+=======
+        
+>>>>>>> origin/master:game.py
     if num_players == 2:
         left_camera = Camera(0,0,0,  0,     0,       0,      WIDTH/2,      HEIGHT, False, True, False, False)
         right_camera = Camera(0,0,0,  0 , WIDTH/2 , 0,     WIDTH/2,      HEIGHT, True, False, False, False)
@@ -1136,6 +1302,10 @@ def init():
         
 def init_single():
     global num_players,time_start,random_victory_text_id,time_end,pause
+<<<<<<< HEAD:StarChaser.py
+=======
+    
+>>>>>>> origin/master:game.py
     pause = False
     time_start = time.time()
     time_end = None
@@ -1143,25 +1313,46 @@ def init_single():
     num_players = 1
     init()
 
+next_runner = None
+    
 def init_multi():
     global num_players, running_player,pause,match_start_countdown,next_runner
+<<<<<<< HEAD:StarChaser.py
     pause = False
+=======
+    
+    pause = False
+    
+>>>>>>> origin/master:game.py
     if next_runner == None:
         running_player = random.randrange(0,2)
     else:
         running_player = next_runner
         next_runner = None
+<<<<<<< HEAD:StarChaser.py
+=======
+        
+>>>>>>> origin/master:game.py
     num_players = 2
     init()
     update_world(0)
     pause = True
     match_start_countdown = time.time()+4
+<<<<<<< HEAD:StarChaser.py
+=======
+    
+    
+>>>>>>> origin/master:game.py
 
 def pass_function(x=None):
     pass
 
 def menu_mouseclick(pos):
     global how_to_play_pressed, chase_mode_pressed, time_trial_pressed, TWO_PLAYER_ENABLED
+<<<<<<< HEAD:StarChaser.py
+=======
+    
+>>>>>>> origin/master:game.py
     how_to_play_pressed = False
     chase_mode_pressed = False
     time_trial_pressed = False
@@ -1216,10 +1407,19 @@ def init_menu(dummy = None):
     
 def end_multi(player_a_score, player_b_score):
     global pause, green_right, green_left, red_right, red_left, next_runner
+<<<<<<< HEAD:StarChaser.py
     if player_a_score == 1:
         next_runner = 1
     else:
         next_runner = 0
+=======
+    
+>>>>>>> origin/master:game.py
+    if player_a_score == 1:
+        next_runner = 1
+    else:
+        next_runner = 0
+        
     if player_a_score == 1:
         green_left = True
     else:
@@ -1237,6 +1437,10 @@ def end_single():
     game_music_intro.rewind()
     if time_end is None:
         time_end = time.time()
+<<<<<<< HEAD:StarChaser.py
+=======
+    
+>>>>>>> origin/master:game.py
     if distance_to_go() <= 0:
         victory_sound.play()
         if time_end-time_start < highscore:
@@ -1255,9 +1459,15 @@ def click_multi_reset(pos):
 def click_single_reset(pos):
     init_single()
     
+background_rotation = 0   
+
 def menu_handler(canvas):
     global background_menu_image, background_rotation, how_to_play_pressed, chase_mode_pressed, time_trial_pressed, TWO_PLAYER_ENABLED
     background_rotation += 0.001
+<<<<<<< HEAD:StarChaser.py
+=======
+    
+>>>>>>> origin/master:game.py
     canvas.draw_image(background_menu_image, ( 705/2, 718/2), ( 705, 718), (WIDTH/2, HEIGHT/2), (HEIGHT*2.5,2.5*HEIGHT), background_rotation)
     canvas.draw_polygon([[150, 25], [WIDTH-150, 25], [WIDTH-150, HEIGHT-425], [150, HEIGHT-425]], 12, "rgba(255,0,0,0)", "rgba(0,0,0,0.5)")
     canvas.draw_polygon([[150, HEIGHT-425], [WIDTH-150, HEIGHT-425], [WIDTH-150, HEIGHT-375], [150, HEIGHT-375]], 12, "rgba(255,0,0,0)", "rgba(255,255,255,0.5)")
@@ -1267,11 +1477,19 @@ def menu_handler(canvas):
         canvas.draw_image(how_to_play_image, ( 695/2, 168/2), ( 695, 168), (2*WIDTH/7-100,HEIGHT-100), (300,150))
     else:
         canvas.draw_image(how_to_play_image_down, ( 695/2, 168/2), ( 695, 168), (2*WIDTH/7-100,HEIGHT-100), (300,150))
+<<<<<<< HEAD:StarChaser.py
+=======
+    
+>>>>>>> origin/master:game.py
     if TWO_PLAYER_ENABLED:
         if not chase_mode_pressed:    
             canvas.draw_image(chase_mode_image, ( 655/2, 168/2), ( 655, 168), (4*WIDTH/7-100,HEIGHT-100), (300,150))
         else:
             canvas.draw_image(chase_mode_image_down, ( 655/2, 168/2), ( 655, 168), (4*WIDTH/7-100,HEIGHT-100), (300,150))
+<<<<<<< HEAD:StarChaser.py
+=======
+     
+>>>>>>> origin/master:game.py
     if not time_trial_pressed:
         canvas.draw_image(time_trial_image, ( 593/2, 168/2), ( 593, 168), (6*WIDTH/7-100,HEIGHT-100), (300,150))
     else:
@@ -1287,6 +1505,10 @@ def loading_handler(canvas):
         canvas.draw_image(loading_animation[10-blinker_counter/5], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
         canvas.draw_image(loading_animation[10-blinker_counter/5-1], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
         canvas.draw_image(loading_animation[10-blinker_counter/5-2], ( 400/2, 300/2), ( 400, 300), (WIDTH/2,HEIGHT/2), (400,300))
+<<<<<<< HEAD:StarChaser.py
+=======
+     
+>>>>>>> origin/master:game.py
     loading_text = ""
     if time.time()-loading_time < 5:
         loading_text = "Loading..."
@@ -1308,9 +1530,20 @@ def loading_handler(canvas):
         loading_text = "Almost there..."
     elif time.time()-loading_time > 90:
         loading_text = "Sorry, this is taking awhile..."
+<<<<<<< HEAD:StarChaser.py
     canvas.draw_text(loading_text, (WIDTH/2-frame.get_canvas_textwidth(loading_text, 30,FONT)/2, HEIGHT-150), 30,'White',FONT)
     if time.time()-loading_time > 2 and time_trial_image_down.get_height() != 0:
         init_menu()
         
 frame.set_draw_handler(loading_handler)
 frame.start()
+=======
+    
+    canvas.draw_text(loading_text, (WIDTH/2-frame.get_canvas_textwidth(loading_text, 30,FONT)/2, HEIGHT-150), 30,'White',FONT)
+        
+    if time.time()-loading_time > 2 and time_trial_image_down.get_height() != 0:
+        init_menu()
+frame = simplegui.create_frame("StarChaser", WIDTH, HEIGHT)
+frame.set_draw_handler(loading_handler)
+frame.start()
+>>>>>>> origin/master:game.py
