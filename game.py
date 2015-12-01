@@ -22,7 +22,10 @@ THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 '''
-
+import math
+import random
+import time
+import simplegui
 FPS_PRINT = True
 loading_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_back.png")
 loading_animation = []
@@ -30,10 +33,6 @@ for i in range(1,13):
     loading_animation.append(simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/loading_"+str(i)+".png"))
 menu_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/menu.ogg")
 menu_music.play()
-import math
-import random
-import time
-import simplegui
 def trim_zero(points, axis, axis_n):
         #Function from: https://paolocrosetto.wordpress.com/python-code/
         #I claim no rights to this function
