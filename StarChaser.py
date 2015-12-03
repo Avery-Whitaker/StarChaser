@@ -69,7 +69,7 @@ TWO_PLAYER_ENABLED = True
 FPS_PRINT = False
 
 #Set volumes between 0.0 and 1.0
-MUSIC_VOLUME = 0.2
+MUSIC_VOLUME = 0
 SOUND_VOLUME = 1
 
 #Set a default highscore or leave at 10000000 for no initial highscore
@@ -813,15 +813,15 @@ def render_frame(canvas):
     render_objects.append(player_a)
     if num_players == 2:
         render_objects.append(player_b)
-    render_objects.append(player_a.shadow(10))
-    render_objects.append(player_a.shadow(25))
+    render_objects.append(player_a.shadow(30))
+    render_objects.append(player_a.shadow(40))
     render_objects.append(player_a.shadow(50))
-    render_objects.append(player_a.shadow(75))
+    render_objects.append(player_a.shadow(60))
     if num_players == 2:
-        render_objects.append(player_b.shadow(10))
-        render_objects.append(player_b.shadow(25))
+        render_objects.append(player_b.shadow(40))
         render_objects.append(player_b.shadow(50))
-        render_objects.append(player_b.shadow(75))
+        render_objects.append(player_b.shadow(60))
+        render_objects.append(player_b.shadow(70))
     if num_players == 2:
         right_camera.draw(canvas,render_objects)
     left_camera.draw(canvas,render_objects)
