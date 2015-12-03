@@ -385,9 +385,10 @@ class Camera(WorldAngle, WorldPoint):
         self.background_index = 1
     
 class WorldPoly(Color):
-    def __init__(self,points, r = random.randrange(70,100), g = random.randrange(200,255), b = random.randrange(70,100), a = 1):
+    def __init__(self,points, r = random.randrange(70,100), g = random.randrange(200,255), b = random.randrange(70,100), a = 1, border_a = 1):
         self.points = points
         Color.__init__(self,r,g,b,a)
+        self.border_a = border_a
         
     def __getitem__(self,key):
         return self.points[key]
@@ -409,7 +410,7 @@ class WorldPoly(Color):
             if maxScale > 0:
                 if minScale < 0:
                     trim_zero(points, 2, 3)
-                return ScreenPoly(points, self.points[0].z, self.color_r, self.color_g, self.color_b, self.color_a )
+                return ScreenPoly(points, self.points[0].z, self.color_r, self.color_g, self.color_b, self.color_a,self.border_a )
             return None
         
 class ScreenPoint:
@@ -466,13 +467,14 @@ class ScreenCircle(ScreenPoint, Color):
                     canvas.draw_image(player_image_b_speedup, (100/ 2, 100/2), (100, 100), (self.x+camera.screen_x, self.y+camera.screen_y),(self.radius * self.scale*5, self.radius * self.scale * 5), player_rotate)
                     
 class ScreenPoly:
-    def __init__(self, points, world_z, color_r, color_g, color_b, color_a):
+    def __init__(self, points, world_z, color_r, color_g, color_b, color_a, border_a = 1):
         self.color_r = color_r
         self.color_g = color_g
         self.color_b = color_b
         self.color_a = color_a
         self.points = points
         self.world_z = world_z
+        self.border_a = border_a
         
     def __getitem__(self,key):
         return list[key]
@@ -503,7 +505,7 @@ class ScreenPoly:
                 maxY = point[1]
         if maxX > camera.screen_x and minX < camera.screen_x+camera.screen_width and maxY > camera.screen_y and minY < camera.screen_y+camera.screen_height:
             poly_trim(new, camera.screen_x, camera.screen_x+camera.screen_width, camera.screen_y, camera.screen_y+camera.screen_height,camera.crop_left,camera.crop_right,camera.crop_top,camera.crop_bot)
-            canvas.draw_polygon(new, 1, "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(1)+")","rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(self.color_a)+")")
+            canvas.draw_polygon(new, 1, "rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(self.border_a)+")","rgba("+str(self.color_r)+","+str(self.color_g)+","+str(self.color_b)+","+str(self.color_a)+")")
 
 class WorldPlayer(WorldSphere, WorldAngle):
     def __init__(self,x,y,r,b,g):
@@ -630,18 +632,17 @@ class WorldPlayer(WorldSphere, WorldAngle):
             self.y -= self.speed * dt * math.cos(self.angle_xy) * self.speed_mod
             self.x -= self.speed * dt * math.sin(self.angle_xy) * self.speed_mod
         
-    def shadow(self):
+    def shadow(self, r):
         points = []
         n = 10
         angle = 0
         shawdow_height = grid.grid_height(self.x,self.y)
-        r = 250
         if shawdow_height >= self.z-self.radius*2:
             return None
         for i in range(0,n):
-            points.append(WorldPoint(self.x+50*math.cos(angle),self.y+50*math.sin(angle),grid.grid_height(self.x,self.y)))
+            points.append(WorldPoint(self.x+r*math.cos(angle),self.y+r*math.sin(angle),grid.grid_height(self.x,self.y)))
             angle+=(math.pi*2)/n
-        return WorldPoly(points, 20, 20, 20)
+        return WorldPoly(points, 0, 0, 0, 0.12,0)
 
 class GridSquare:
     def __init__(self, height, x, y, world_poly = None, level = 0):
@@ -812,9 +813,15 @@ def render_frame(canvas):
     render_objects.append(player_a)
     if num_players == 2:
         render_objects.append(player_b)
-    render_objects.append(player_a.shadow())
+    render_objects.append(player_a.shadow(10))
+    render_objects.append(player_a.shadow(25))
+    render_objects.append(player_a.shadow(50))
+    render_objects.append(player_a.shadow(75))
     if num_players == 2:
-        render_objects.append(player_b.shadow())
+        render_objects.append(player_b.shadow(10))
+        render_objects.append(player_b.shadow(25))
+        render_objects.append(player_b.shadow(50))
+        render_objects.append(player_b.shadow(75))
     if num_players == 2:
         right_camera.draw(canvas,render_objects)
     left_camera.draw(canvas,render_objects)
