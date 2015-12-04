@@ -150,7 +150,7 @@ time_trial_image_down = simplegui.load_image("https://github.com/Avery-Whitaker/
 if TWO_PLAYER_ENABLED:
     how_to_play_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/How%20to%20play.png")
 else:
-    how_to_play_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/How%20to%20play_one_player.png")
+    how_to_play_menu_image = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/How%20to%20play_1_player.png")
 player_image_a = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a.png")
 player_image_b = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_b.png")
 player_image_a_speedup = simplegui.load_image("https://github.com/Avery-Whitaker/Python-Game/raw/master/player_sprite_a_speed.png")
