@@ -3,7 +3,7 @@ Welcome to StarChaser! A 3D platformer built in a 2D game engine.
 
 
 Play it here (press the play button in top left)
-http://www.codeskulptor.org/#user40_P0RcrRQtZczE6nn.py
+http://www.codeskulptor.org/#user40_UgPu7AENHxdnTjA.py
 
 
 Game includes two modes. “Chase” mode (two player) and “Time Trial” mode (single player). 

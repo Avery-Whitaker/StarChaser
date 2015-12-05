@@ -63,7 +63,7 @@ unauthorized aid on this assignment.
 -Avery Whitaker
 '''
 
-TWO_PLAYER_ENABLED = False
+TWO_PLAYER_ENABLED = True
 
 #Print FPS and number of tiles rendered
 FPS_PRINT = False
@@ -162,6 +162,7 @@ platform_death_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/P
 victory_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/victory_fanfare.mp3")
 speed_up_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_up.mp3")
 speed_down_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/speed_down.mp3")
+countdown_sound = simplegui.load_sound("https://github.com/Avery-Whitaker/StarChaser/raw/master/countdown.mp3")
 game_music = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_music_loop.ogg")
 game_music_intro = simplegui.load_sound("https://github.com/Avery-Whitaker/Python-Game/raw/master/game_intro.ogg")
 menu_music.set_volume(MUSIC_VOLUME)
@@ -170,6 +171,7 @@ game_music_intro.set_volume(MUSIC_VOLUME)
 speed_down_sound.set_volume(SOUND_VOLUME)
 speed_up_sound.set_volume(SOUND_VOLUME)
 victory_sound.set_volume(SOUND_VOLUME)
+countdown_sound.set_volume(SOUND_VOLUME)
 platform_death_sound.set_volume(SOUND_VOLUME)
 falling_sound.set_volume(SOUND_VOLUME)
 beep_sound.set_volume(SOUND_VOLUME)
@@ -918,8 +920,10 @@ def render_frame(canvas):
         canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 50,FONT)/2, 150), 50,'White',FONT)
     if num_players == 2:
         current_time = time.time()
-        if match_start_countdown > current_time:
+        if match_start_countdown is not None and match_start_countdown-0.5 > current_time:
             text = str(int(match_start_countdown-current_time))
+            if text == "0":
+                text = "GO!"
             canvas.draw_text(text, (WIDTH/2-frame.get_canvas_textwidth(text, 120, FONT)/2, HEIGHT/2), 120, 'Yellow',FONT)
             if running_player == 0:
                 text_left = "Runner"
@@ -980,7 +984,7 @@ def distance_to_go():
 def update_world_always(time_delta):
     global pause, match_start_countdown
     if num_players == 2:
-        if pause and match_start_countdown is not None and match_start_countdown < time.time():
+        if pause and match_start_countdown is not None and match_start_countdown-1 < time.time():
             pause = False
             match_start_countdown = None
         dx = player_b.x-player_a.x
@@ -1172,6 +1176,8 @@ def init_multi():
     update_world(0)
     pause = True
     match_start_countdown = time.time()+4
+    countdown_sound.rewind()
+    countdown_sound.play()
 
 def pass_function(x=None):
     pass
